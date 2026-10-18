@@ -20,10 +20,15 @@ button{cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-size:1
 #login input,#login select{width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:var(--input);color:var(--text);font-size:15px}
 #login input[type=color]{height:44px;padding:4px}
 #join-btn{width:100%;margin-top:16px;background:var(--accent);color:#fff;font-size:16px;padding:12px}
-#chat{display:none;flex:1;flex-direction:column;max-width:700px;width:100%;margin:0 auto;padding:12px}
+#chat{display:none;flex:1;flex-direction:column;max-width:900px;width:100%;margin:0 auto;padding:12px}
 #room-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .room-btn{background:var(--input);color:var(--text);font-size:13px;padding:6px 12px}
 .room-btn.active{background:var(--accent);color:#fff}
+#main-row{display:flex;gap:10px;flex:1}
+#online-panel{width:160px;background:var(--card);border-radius:12px;padding:10px;margin-bottom:10px;max-height:60vh;overflow-y:auto;font-size:14px}
+#online-panel h3{font-size:13px;margin-bottom:8px;opacity:.7}
+.online-user{margin-bottom:4px;font-weight:600;word-break:break-all}
+@media(max-width:600px){#online-panel{width:110px;font-size:12px}}
 #messages{flex:1;overflow-y:auto;background:var(--card);border-radius:12px;padding:12px;min-height:300px;max-height:60vh;margin-bottom:10px}
 .msg{margin-bottom:8px;word-wrap:break-word;font-size:15px}
 .msg .nick{font-weight:700}
@@ -52,12 +57,16 @@ footer a{color:var(--accent)}
 <option value="music">🎵 Музыка</option>
 <option value="games">🎮 Игры</option>
 <option value="random">🎲 Болталка</option>
+<option value="links">🔗 Ссылки</option>
 </select>
 <button id="join-btn" onclick="join()">В чат!</button>
 </div>
 <div id="chat">
 <div id="room-bar"></div>
+<div id="main-row">
 <div id="messages"></div>
+<div id="online-panel"><h3 id="online-title">👥 В чате</h3><div id="online-list"></div></div>
+</div>
 <form id="send-form" onsubmit="sendMsg(event)">
 <input id="msg-input" maxlength="500" placeholder="Написать сообщение..." autocomplete="off">
 <button id="send-btn" type="submit">➤</button>
@@ -68,9 +77,9 @@ footer a{color:var(--accent)}
 const API = "https://eriktalk-api.onrender.com";
 let nick="", color="#4CAF50", room="general", lastId=0, pollTimer=null;
 const L = {
-ru: {title:"Вход в чат", nickL:"Ваш ник:", colorL:"Ваш цвет:", roomL:"Комната:", join:"В чат!", guest:"Гость", ph:"Написать сообщение...", rooms:{general:"🏠 Общая", music:"🎵 Музыка", games:"🎮 Игры", random:"🎲 Болталка"}, back:"🎄 На главную"},
-uk: {title:"Вхід у чат", nickL:"Ваш нік:", colorL:"Ваш колір:", roomL:"Кімната:", join:"У чат!", guest:"Гість", ph:"Написати повідомлення...", rooms:{general:"🏠 Загальна", music:"🎵 Музика", games:"🎮 Ігри", random:"🎲 Балаканина"}, back:"🎄 На головну"},
-en: {title:"Join chat", nickL:"Your nick:", colorL:"Your color:", roomL:"Room:", join:"Join!", guest:"Guest", ph:"Type a message...", rooms:{general:"🏠 General", music:"🎵 Music", games:"🎮 Games", random:"🎲 Random"}, back:"🎄 Home"}
+ru: {title:"Вход в чат", nickL:"Ваш ник:", colorL:"Ваш цвет:", roomL:"Комната:", join:"В чат!", guest:"Гость", ph:"Написать сообщение...", rooms:{general:"🏠 Общая", music:"🎵 Музыка", games:"🎮 Игры", random:"🎲 Болталка", links:"🔗 Ссылки"}, back:"🎄 На главную", online:"👥 В чате"},
+uk: {title:"Вхід у чат", nickL:"Ваш нік:", colorL:"Ваш колір:", roomL:"Кімната:", join:"У чат!", guest:"Гість", ph:"Написати повідомлення...", rooms:{general:"🏠 Загальна", music:"🎵 Музика", games:"🎮 Ігри", random:"🎲 Балаканина", links:"🔗 Посилання"}, back:"🎄 На головну", online:"👥 У чаті"},
+en: {title:"Join chat", nickL:"Your nick:", colorL:"Your color:", roomL:"Room:", join:"Join!", guest:"Guest", ph:"Type a message...", rooms:{general:"🏠 General", music:"🎵 Music", games:"🎮 Games", random:"🎲 Random", links:"🔗 Links"}, back:"🎄 Home", online:"👥 Online"}
 };
 let lang = localStorage.getItem("et-lang") || "ru";
 function t(k){return L[lang][k]}
@@ -84,12 +93,13 @@ function applyLang(){
   document.getElementById("join-btn").textContent=t("join");
   document.getElementById("msg-input").placeholder=t("ph");
   document.querySelector("footer a").textContent=t("back");
+  document.getElementById("online-title").textContent=t("online");
   renderRooms();
 }
 function toggleTheme(){document.body.classList.toggle("light");localStorage.setItem("et-theme",document.body.classList.contains("light")?"light":"dark")}
 if(localStorage.getItem("et-theme")==="light")document.body.classList.add("light");
 if(localStorage.getItem("et-nick"))document.getElementById("nick").value=localStorage.getItem("et-nick");
-const rooms=[["general","general"],["music","music"],["games","games"],["random","random"]];
+const rooms=[["general","general"],["music","music"],["games","games"],["random","random"],["links","links"]];
 function renderRooms(){
   document.getElementById("room-bar").innerHTML=rooms.map(r=>`<button class="room-btn${r[0]===room?' active':''}" onclick="switchRoom('${r[0]}')">${t("rooms")[r[0]]}</button>`).join("");
 }
@@ -101,8 +111,9 @@ function join(){
   localStorage.setItem("et-nick",nick);
   document.getElementById("login").style.display="none";
   document.getElementById("chat").style.display="flex";
-  renderRooms();loadMsgs();
-  pollTimer=setInterval(loadMsgs,3000);
+  renderRooms();loadMsgs();loadOnline();doPing();
+  pollTimer=setInterval(()=>{loadMsgs();loadOnline();},3000);
+  setInterval(doPing,30000);
 }
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 async function loadMsgs(){
@@ -117,6 +128,16 @@ async function loadMsgs(){
       box.innerHTML+=`<div class="msg"><span class="nick" style="color:${esc(m.color)}">${esc(m.nick)}</span><span class="time">${t}</span>: ${esc(m.text)}</div>`;
     });
     if(msgs.length)box.scrollTop=box.scrollHeight;
+  }catch(e){}
+}
+async function doPing(){
+  try{await fetch(`${API}/api/ping`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nick,color,room})});}catch(e){}
+}
+async function loadOnline(){
+  try{
+    const r=await fetch(`${API}/api/online?room=${room}`);
+    const users=await r.json();
+    document.getElementById("online-list").innerHTML=users.map(u=>`<div class="online-user" style="color:${esc(u.color)}">● ${esc(u.nick)}</div>`).join("")||'<div style="opacity:.5;font-size:12px">—</div>';
   }catch(e){}
 }
 async function sendMsg(e){
