@@ -27,6 +27,9 @@ h1{font-size:2.5em;margin-bottom:10px;text-shadow:0 0 20px rgba(255,215,0,.5)}
 .station-btn.active{background:#4CAF50;border-color:#4CAF50}
 audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 .footer{color:#666;margin-top:40px;font-size:.9em}
+.garland{position:relative;z-index:2;display:flex;justify-content:center;gap:8px;padding:15px 0;flex-wrap:wrap}
+.garland-light{width:14px;height:14px;border-radius:50%;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1;box-shadow:0 0 12px currentColor}}
 .tree{margin-bottom:30px;position:relative;width:200px;height:280px;margin-left:auto;margin-right:auto}
 .tree-star{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:36px;animation:spin 4s linear infinite;filter:drop-shadow(0 0 10px gold)}
 @keyframes spin{0%,100%{transform:translateX(-50%) rotate(-10deg)}50%{transform:translateX(-50%) rotate(10deg)}}
@@ -36,15 +39,33 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 .tree-l3{top:140px;border-left-width:90px;border-right-width:90px;border-bottom:110px solid #083d1f}
 .tree-trunk{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30px;height:40px;background:#5a3a1a;border-radius:4px}
 .tree-light{position:absolute;width:10px;height:10px;border-radius:50%;animation:blink 1.5s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:.3}50%{opacity:1;box-shadow:0 0 10px currentColor}}
 .tree-ball{position:absolute;width:14px;height:14px;border-radius:50%;box-shadow:inset -2px -2px 4px rgba(0,0,0,.4)}
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 10px rgba(255,215,0,.5))}50%{filter:drop-shadow(0 0 25px rgba(255,215,0,.9))}}
 </style>
 </head>
 <body>
 <canvas class="snow" id="snow"></canvas>
+<div class="garland" id="garland"></div>
 <div class="container">
-<div class="tree">🎄</div>
+<div class="clocks" style="margin-bottom:30px">
+<div class="clock-card"><div class="clock-time" id="clock-local">00:00:00</div><div class="clock-label">Время</div></div>
+<div class="clock-card"><div class="clock-time" id="date-today" style="font-size:1.8em">—</div><div class="clock-label" id="holiday-today">📅</div></div>
+</div>
+<div class="tree" style="width:300px;height:420px">
+<div class="tree-star">⭐</div>
+<div class="tree-layer tree-l1" style="top:40px;border-left-width:75px;border-right-width:75px;border-bottom-width:105px"></div>
+<div class="tree-layer tree-l2" style="top:120px;border-left-width:105px;border-right-width:105px;border-bottom-width:135px"></div>
+<div class="tree-layer tree-l3" style="top:210px;border-left-width:135px;border-right-width:135px;border-bottom-width:165px"></div>
+<div class="tree-trunk" style="width:45px;height:60px"></div>
+<div class="tree-light" style="top:90px;left:45%;color:#ff0000;background:#ff0000"></div>
+<div class="tree-light" style="top:130px;left:60%;color:#00ff00;background:#00ff00;animation-delay:.5s"></div>
+<div class="tree-light" style="top:170px;left:40%;color:#0000ff;background:#0088ff;animation-delay:1s"></div>
+<div class="tree-light" style="top:210px;left:55%;color:#ffff00;background:#ffff00;animation-delay:.3s"></div>
+<div class="tree-light" style="top:250px;left:45%;color:#ff00ff;background:#ff00ff;animation-delay:.8s"></div>
+<div class="tree-ball" style="top:110px;left:52%;background:#ff0000"></div>
+<div class="tree-ball" style="top:190px;left:48%;background:#0000ff"></div>
+<div class="tree-ball" style="top:260px;left:58%;background:#ffd700"></div>
+</div>
 <h1>До Нового Года осталось:</h1>
 <p class="subtitle">Erik's New Year Countdown</p>
 <div class="countdown">
@@ -52,10 +73,6 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <div class="time-box"><div class="time-num" id="hours">0</div><div class="time-label">часов</div></div>
 <div class="time-box"><div class="time-num" id="minutes">0</div><div class="time-label">минут</div></div>
 <div class="time-box"><div class="time-num" id="seconds">0</div><div class="time-label">секунд</div></div>
-</div>
-<div class="clocks">
-<div class="clock-card"><div class="clock-time" id="clock-local">00:00:00</div><div class="clock-label">Местное время</div></div>
-<div class="clock-card"><div class="clock-time" id="clock-utc">00:00:00</div><div class="clock-label">UTC</div></div>
 </div>
 <div class="radio">
 <h2>📻 Новогоднее радио</h2>
@@ -68,6 +85,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <p class="footer">© 2026 Erik Lebed 🎄 Сделано с любовью<br><br><a href="https://eriksocial.pythonanywhere.com" style="color:#4CAF50;text-decoration:none;font-size:1.1em">🌐 Наша соцсеть E.Y.L</a></p>
 </div>
 <script>
+(function(){const g=document.getElementById('garland');const colors=['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ff8800'];for(let i=0;i<30;i++){const l=document.createElement('div');l.className='garland-light';const c=colors[i%colors.length];l.style.background=c;l.style.color=c;l.style.animationDelay=(i*0.15)+'s';g.appendChild(l)}})();
 const c=document.getElementById('snow'),x=c.getContext('2d');let W,H,flakes=[];
 function rs(){W=c.width=innerWidth;H=c.height=innerHeight}
 rs();addEventListener('resize',rs);
@@ -75,10 +93,13 @@ for(let i=0;i<150;i++)flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.ra
 (function anim(){x.clearRect(0,0,W,H);x.fillStyle='#fff';flakes.forEach(f=>{x.globalAlpha=f.o;x.beginPath();x.arc(f.x,f.y,f.r,0,7);x.fill();f.y+=f.s;f.x+=Math.sin(f.y/50);if(f.y>H){f.y=0;f.x=Math.random()*W}});requestAnimationFrame(anim)})();
 function cd(){const n=new Date(2027,0,1)-new Date();if(n<0)return;const d=Math.floor(n/864e5),h=Math.floor(n/36e5)%24,m=Math.floor(n/6e4)%60,s=Math.floor(n/1e3)%60;days.textContent=d;hours.textContent=String(h).padStart(2,'0');minutes.textContent=String(m).padStart(2,'0');seconds.textContent=String(s).padStart(2,'0')}
 setInterval(cd,1000);cd();
-function ck(){const n=new Date();document.getElementById('clock-local').textContent=n.toLocaleTimeString('ru-RU');document.getElementById('clock-utc').textContent=n.toUTCString().slice(17,25)}
+function ck(){const n=new Date();document.getElementById('clock-local').textContent=n.toLocaleTimeString('ru-RU')}
 setInterval(ck,1000);ck();
+(function(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'💘 День влюблённых','03-08':'🌷 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||'📅 '+n.getFullYear()})();
 const p=document.getElementById('player');
-document.querySelectorAll('.station-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.station-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');p.src=b.dataset.url;p.play()});
+p.preload='none';
+document.querySelectorAll('.station-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.station-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');try{p.pause()}catch(e){}p.src=b.dataset.url;p.load();const pr=p.play();if(pr&&pr.catch)pr.catch(e=>{b.textContent+=' (ошибка)';setTimeout(()=>{b.textContent=b.textContent.replace(' (ошибка)','')},3000)})});
+p.addEventListener('error',()=>{document.querySelectorAll('.station-btn.active').forEach(b=>{b.textContent+=' ⚠️';setTimeout(()=>{b.textContent=b.textContent.replace(' ⚠️','')},3000)})});
 </script>
 </body>
 </html>
