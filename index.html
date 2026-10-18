@@ -61,7 +61,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <h2>📻 Новогоднее радио</h2>
 <div class="stations">
 <button class="station-btn" data-url="https://ice1.somafm.com/christmas-128-mp3">🎅 SomaFM Christmas</button>
-<button class="station-btn" data-url="https://ice1.somafm.com/seasonal-128-mp3">❄️ Seasonal</button>
+<button class="station-btn" data-url="https://ice1.somafm.com/xmasinfrisko-128-mp3">🎄 Xmas in Frisko</button>
 </div>
 <audio id="player" controls></audio>
 </div>
@@ -75,7 +75,7 @@ for(let i=0;i<150;i++)flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.ra
 (function anim(){x.clearRect(0,0,W,H);x.fillStyle='#fff';flakes.forEach(f=>{x.globalAlpha=f.o;x.beginPath();x.arc(f.x,f.y,f.r,0,7);x.fill();f.y+=f.s;f.x+=Math.sin(f.y/50);if(f.y>H){f.y=0;f.x=Math.random()*W}});requestAnimationFrame(anim)})();
 function cd(){const n=new Date(2027,0,1)-new Date();if(n<0)return;const d=Math.floor(n/864e5),h=Math.floor(n/36e5)%24,m=Math.floor(n/6e4)%60,s=Math.floor(n/1e3)%60;days.textContent=d;hours.textContent=String(h).padStart(2,'0');minutes.textContent=String(m).padStart(2,'0');seconds.textContent=String(s).padStart(2,'0')}
 setInterval(cd,1000);cd();
-function ck(){const n=new Date();clock_local.textContent=n.toLocaleTimeString('ru-RU');clock_utc.textContent=n.toUTCString().slice(17,25)}
+function ck(){const n=new Date();document.getElementById('clock-local').textContent=n.toLocaleTimeString('ru-RU');document.getElementById('clock-utc').textContent=n.toUTCString().slice(17,25)}
 setInterval(ck,1000);ck();
 const p=document.getElementById('player');
 document.querySelectorAll('.station-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.station-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');p.src=b.dataset.url;p.play()});
