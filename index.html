@@ -77,8 +77,8 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <div class="radio">
 <h2>📻 Новогоднее радио</h2>
 <div class="stations">
-<button class="station-btn" data-url="https://christmasfm.cdnstream1.com/2550_128.mp3">🎄 Christmas FM</button>
-<button class="station-btn" data-url="https://1000christmashits.stream.laut.fm/1000christmashits">🎅 1000 Christmas Hits</button>
+<button class="station-btn" data-url="https://ice1.somafm.com/christmas-128-mp3">🎅 SomaFM Christmas</button>
+<button class="station-btn" data-url="https://ice1.somafm.com/xmasinfrisko-128-mp3">🎄 Xmas in Frisko</button>
 </div>
 <audio id="player" controls></audio>
 </div>
@@ -95,7 +95,9 @@ function cd(){const n=new Date(2027,0,1)-new Date();if(n<0)return;const d=Math.f
 setInterval(cd,1000);cd();
 function ck(){const n=new Date();document.getElementById('clock-local').textContent=n.toLocaleTimeString('ru-RU')}
 setInterval(ck,1000);ck();
-(function(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'💘 День влюблённых','03-08':'🌷 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||'📅 '+n.getFullYear()})();
+// Дата и праздники
+function updDate(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'💘 День влюблённых','03-08':'🌷 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||'📅 '+n.getFullYear()}
+updDate();setInterval(updDate,30000);
 const p=document.getElementById('player');
 p.preload='none';
 document.querySelectorAll('.station-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.station-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');try{p.pause()}catch(e){}p.src=b.dataset.url;p.load();const pr=p.play();if(pr&&pr.catch)pr.catch(e=>{b.textContent+=' (ошибка)';setTimeout(()=>{b.textContent=b.textContent.replace(' (ошибка)','')},3000)})});
