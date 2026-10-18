@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💬 ErikTalk — чат</title>
+<style>
+:root{--bg:#0a0a2e;--card:#141444;--text:#fff;--accent:#4CAF50;--input:#1e1e5a}
+body.light{--bg:#f0f0f5;--card:#fff;--text:#222;--input:#e8e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;transition:background .3s}
+header{background:var(--card);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+header h1{font-size:20px}
+header .tools{display:flex;gap:8px}
+button{cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-size:14px}
+.theme-btn{background:var(--input);color:var(--text)}
+#login{max-width:400px;margin:40px auto;padding:24px;background:var(--card);border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+#login h2{text-align:center;margin-bottom:16px}
+#login label{display:block;margin:12px 0 4px;font-size:14px}
+#login input,#login select{width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:var(--input);color:var(--text);font-size:15px}
+#login input[type=color]{height:44px;padding:4px}
+#join-btn{width:100%;margin-top:16px;background:var(--accent);color:#fff;font-size:16px;padding:12px}
+#chat{display:none;flex:1;flex-direction:column;max-width:700px;width:100%;margin:0 auto;padding:12px}
+#room-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.room-btn{background:var(--input);color:var(--text);font-size:13px;padding:6px 12px}
+.room-btn.active{background:var(--accent);color:#fff}
+#messages{flex:1;overflow-y:auto;background:var(--card);border-radius:12px;padding:12px;min-height:300px;max-height:60vh;margin-bottom:10px}
+.msg{margin-bottom:8px;word-wrap:break-word;font-size:15px}
+.msg .nick{font-weight:700}
+.msg .time{font-size:11px;opacity:.5;margin-left:6px}
+#send-form{display:flex;gap:8px}
+#msg-input{flex:1;padding:12px;border-radius:10px;border:1px solid #444;background:var(--input);color:var(--text);font-size:15px}
+#send-btn{background:var(--accent);color:#fff;font-size:15px}
+footer{text-align:center;padding:12px;font-size:12px;opacity:.5}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+<h1>💬 ErikTalk</h1>
+<div class="tools"><button class="theme-btn" onclick="toggleTheme()">🌙/☀️</button><button class="theme-btn" onclick="cycleLang()">🌐 <span id="lang-cur">RU</span></button></div>
+</header>
+<div id="login">
+<h2>Вход в чат</h2>
+<label>Ваш ник:</label>
+<input id="nick" maxlength="20" placeholder="Например: Erik">
+<label>Ваш цвет:</label>
+<input type="color" id="color" value="#4CAF50">
+<label>Комната:</label>
+<select id="room">
+<option value="general">🏠 Общая</option>
+<option value="music">🎵 Музыка</option>
+<option value="games">🎮 Игры</option>
+<option value="random">🎲 Болталка</option>
+</select>
+<button id="join-btn" onclick="join()">В чат!</button>
+</div>
+<div id="chat">
+<div id="room-bar"></div>
+<div id="messages"></div>
+<form id="send-form" onsubmit="sendMsg(event)">
+<input id="msg-input" maxlength="500" placeholder="Написать сообщение..." autocomplete="off">
+<button id="send-btn" type="submit">➤</button>
+</form>
+</div>
+<footer><a href="/">🎄 На главную</a> · ErikTalk © 2026</footer>
+<script>
+const API = "https://eriktalk-api.onrender.com";
+let nick="", color="#4CAF50", room="general", lastId=0, pollTimer=null;
+const L = {
+ru: {title:"Вход в чат", nickL:"Ваш ник:", colorL:"Ваш цвет:", roomL:"Комната:", join:"В чат!", guest:"Гость", ph:"Написать сообщение...", rooms:{general:"🏠 Общая", music:"🎵 Музыка", games:"🎮 Игры", random:"🎲 Болталка"}, back:"🎄 На главную"},
+uk: {title:"Вхід у чат", nickL:"Ваш нік:", colorL:"Ваш колір:", roomL:"Кімната:", join:"У чат!", guest:"Гість", ph:"Написати повідомлення...", rooms:{general:"🏠 Загальна", music:"🎵 Музика", games:"🎮 Ігри", random:"🎲 Балаканина"}, back:"🎄 На головну"},
+en: {title:"Join chat", nickL:"Your nick:", colorL:"Your color:", roomL:"Room:", join:"Join!", guest:"Guest", ph:"Type a message...", rooms:{general:"🏠 General", music:"🎵 Music", games:"🎮 Games", random:"🎲 Random"}, back:"🎄 Home"}
+};
+let lang = localStorage.getItem("et-lang") || "ru";
+function t(k){return L[lang][k]}
+function cycleLang(){lang = lang==="ru"?"uk":lang==="uk"?"en":"ru";localStorage.setItem("et-lang",lang);applyLang();}
+function applyLang(){
+  document.getElementById("lang-cur").textContent=lang.toUpperCase();
+  document.querySelector("#login h2").textContent=t("title");
+  document.querySelectorAll("#login label")[0].textContent=t("nickL");
+  document.querySelectorAll("#login label")[1].textContent=t("colorL");
+  document.querySelectorAll("#login label")[2].textContent=t("roomL");
+  document.getElementById("join-btn").textContent=t("join");
+  document.getElementById("msg-input").placeholder=t("ph");
+  document.querySelector("footer a").textContent=t("back");
+  renderRooms();
+}
+function toggleTheme(){document.body.classList.toggle("light");localStorage.setItem("et-theme",document.body.classList.contains("light")?"light":"dark")}
+if(localStorage.getItem("et-theme")==="light")document.body.classList.add("light");
+if(localStorage.getItem("et-nick"))document.getElementById("nick").value=localStorage.getItem("et-nick");
+const rooms=[["general","general"],["music","music"],["games","games"],["random","random"]];
+function renderRooms(){
+  document.getElementById("room-bar").innerHTML=rooms.map(r=>`<button class="room-btn${r[0]===room?' active':''}" onclick="switchRoom('${r[0]}')">${t("rooms")[r[0]]}</button>`).join("");
+}
+function switchRoom(r){room=r;lastId=0;document.getElementById("messages").innerHTML="";renderRooms();loadMsgs();}
+function join(){
+  nick=document.getElementById("nick").value.trim()||t("guest");
+  color=document.getElementById("color").value;
+  room=document.getElementById("room").value;
+  localStorage.setItem("et-nick",nick);
+  document.getElementById("login").style.display="none";
+  document.getElementById("chat").style.display="flex";
+  renderRooms();loadMsgs();
+  pollTimer=setInterval(loadMsgs,3000);
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+async function loadMsgs(){
+  try{
+    const r=await fetch(`${API}/api/messages?room=${room}&after=${lastId}`);
+    const msgs=await r.json();
+    const box=document.getElementById("messages");
+    msgs.forEach(m=>{
+      lastId=Math.max(lastId,m.id);
+      const d=new Date(m.ts*1000);
+      const t=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+      box.innerHTML+=`<div class="msg"><span class="nick" style="color:${esc(m.color)}">${esc(m.nick)}</span><span class="time">${t}</span>: ${esc(m.text)}</div>`;
+    });
+    if(msgs.length)box.scrollTop=box.scrollHeight;
+  }catch(e){}
+}
+async function sendMsg(e){
+  e.preventDefault();
+  const inp=document.getElementById("msg-input");
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value="";
+  try{await fetch(`${API}/api/messages`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nick,color,text,room})});loadMsgs();}catch(e){}
+}
+applyLang();
+</script>
+</body>
+</html>
