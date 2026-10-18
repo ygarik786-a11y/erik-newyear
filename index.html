@@ -97,7 +97,7 @@ setInterval(cd,1000);cd();
 function ck(){const n=new Date();document.getElementById('clock-local').textContent=n.toLocaleTimeString('ru-RU')}
 setInterval(ck,1000);ck();
 // Дата и праздники
-function updDate(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'❤️ День влюблённых','03-08':'🌸 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||'📅 '+n.getFullYear()}
+function updDate(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'❤️ День влюблённых','03-08':'🌸 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||n.getFullYear()}
 updDate();setInterval(updDate,30000);
 const p=document.getElementById('player');
 p.preload='none';
