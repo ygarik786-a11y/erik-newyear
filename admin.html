@@ -6,14 +6,19 @@
 <title>🔐</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#0a0e27 0%,#1a1a3e 50%,#0f2027 100%);color:#fff;min-height:100vh}
-.container{max-width:760px;margin:0 auto;padding:30px 16px}
-h1{font-size:1.5em;margin-bottom:16px;text-align:center}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#0a0e27 0%,#1a1a3e 50%,#0f2027 100%);color:#fff;min-height:100vh;overflow-x:hidden}
+.snow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.garland{position:relative;z-index:2;display:flex;justify-content:center;gap:8px;padding:14px 0 2px;flex-wrap:wrap}
+.garland-light{width:13px;height:13px;border-radius:50%;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1;box-shadow:0 0 12px currentColor}}
+.container{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:18px 16px 34px}
+h1{font-size:1.6em;margin-bottom:6px;text-align:center;text-shadow:0 0 18px rgba(255,215,0,.55)}
+.sub{text-align:center;color:#aaa;margin-bottom:18px;font-size:.95em}
 h2{font-size:1.15em;margin:26px 0 12px}
-.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;margin-bottom:14px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,215,0,.22);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 0 14px rgba(0,0,0,.25)}
 input[type=text],input[type=password],input[type=date],textarea{background:#141428;border:1px solid rgba(255,255,255,.2);color:#fff;padding:11px 13px;border-radius:10px;font-size:1em;width:100%;margin-bottom:10px}
 textarea{resize:vertical;min-height:64px}
-.btn{background:#4CAF50;border:none;color:#fff;padding:11px 22px;border-radius:10px;font-size:1em;cursor:pointer}
+.btn{background:#4CAF50;border:none;color:#fff;padding:11px 22px;border-radius:10px;font-size:1em;cursor:pointer;box-shadow:0 2px 8px rgba(76,175,80,.35)}
 .btn:hover{background:#45a049}
 .btn.small{padding:6px 13px;font-size:.9em}
 .btn.red{background:#8a2a2a}.btn.red:hover{background:#a33}
@@ -27,11 +32,20 @@ textarea{resize:vertical;min-height:64px}
 .hidden{display:none}
 label.chk{display:flex;gap:7px;align-items:center;font-size:.9em;color:#ccc;cursor:pointer}
 .top{display:flex;justify-content:space-between;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px 6px;text-align:center}
+.stat .num{font-size:1.5em;font-weight:bold;color:#ffd700;font-variant-numeric:tabular-nums}
+.stat .lbl{color:#aaa;font-size:.72em;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.stat-names{color:#ccc;font-size:.85em;text-align:center;margin:-4px 0 12px}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
+<canvas class="snow" id="snow"></canvas>
+<div class="garland" id="garland"></div>
 <div class="container">
-<h1>🔐 Админка</h1>
+<h1>🎄 Админка Erik 🎄</h1>
+<p class="sub">Твой личный кабинет новогоднего сайта — виден только тебе 🔐</p>
 
 <div class="card" id="setup-box" style="display:none">
 <h2>Придумай пароль админки</h2>
@@ -50,6 +64,13 @@ label.chk{display:flex;gap:7px;align-items:center;font-size:.9em;color:#ccc;curs
 </div>
 
 <div id="panel" style="display:none">
+<div class="stats">
+<div class="stat"><div class="num" id="stat-ny">–</div><div class="lbl">🎄 дней до НГ</div></div>
+<div class="stat"><div class="num" id="stat-pend">–</div><div class="lbl">📥 заявок ждёт</div></div>
+<div class="stat"><div class="num" id="stat-all">–</div><div class="lbl">🎂 дней рождения</div></div>
+<div class="stat"><div class="num" id="stat-online">–</div><div class="lbl">💬 сейчас в чате</div></div>
+</div>
+<p class="stat-names" id="stat-online-names"></p>
 <div class="top"><h2 style="margin:0">🎂 Дни рождения</h2><button class="btn grey small" id="logout-btn">Выйти</button></div>
 
 <div class="card">
@@ -79,6 +100,15 @@ label.chk{display:flex;gap:7px;align-items:center;font-size:.9em;color:#ccc;curs
 </div>
 </div>
 <script>
+// Гирлянда
+(function(){const g=document.getElementById('garland');const colors=['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ff8800'];for(let i=0;i<30;i++){const l=document.createElement('div');l.className='garland-light';const c=colors[i%colors.length];l.style.background=c;l.style.color=c;l.style.animationDelay=(i*0.15)+'s';g.appendChild(l)}})();
+// Снег
+const c=document.getElementById('snow'),x=c.getContext('2d');let W,H,flakes=[];
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}
+rs();addEventListener('resize',rs);
+for(let i=0;i<120;i++)flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*3+1,s:Math.random()*2+.5,o:Math.random()*.8+.2});
+(function anim(){x.clearRect(0,0,W,H);x.fillStyle='#fff';flakes.forEach(f=>{x.globalAlpha=f.o;x.beginPath();x.arc(f.x,f.y,f.r,0,7);x.fill();f.y+=f.s;f.x+=Math.sin(f.y/50);if(f.y>H){f.y=0;f.x=Math.random()*W}});requestAnimationFrame(anim)})();
+
 const API='https://eriktalk-api.onrender.com';
 const TK='ny_admin_token';
 const $=id=>document.getElementById(id);
@@ -99,7 +129,23 @@ function daysLeft(b){
  if(t<new Date(now.getFullYear(),now.getMonth(),now.getDate()))t=new Date(now.getFullYear()+1,b.month-1,b.day);
  return Math.round((t-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
 }
+function statNY(){
+ const now=new Date();const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ let ny=new Date(now.getFullYear()+1,0,1);
+ $('stat-ny').textContent=Math.round((ny-start)/864e5);
+}
+async function statOnline(){
+ const rooms=['general','music','games','random','links'];
+ const names=new Set();
+ try{
+  const rs=await Promise.all(rooms.map(r=>fetch(API+'/api/online?room='+r).then(x=>x.json()).catch(()=>[])));
+  rs.forEach(list=>{(list||[]).forEach(u=>{if(u&&u.nick)names.add(u.nick)})});
+ }catch(e){}
+ $('stat-online').textContent=names.size;
+ $('stat-online-names').textContent=names.size?('Сейчас в ErikTalk: '+[...names].slice(0,10).join(', ')):'';
+}
 async function init(){
+ statNY();
  if(token()){
    const r=await api('/api/admin/birthdays');
    if(r.ok){showPanel();loadAll();return}
@@ -135,6 +181,9 @@ async function loadAll(){
  const list=await r.json();
  const pend=list.filter(b=>b.status!=='approved');
  const appr=list.filter(b=>b.status==='approved');
+ $('stat-pend').textContent=pend.length;
+ $('stat-all').textContent=appr.length;
+ statOnline();
  $('pending-list').innerHTML=pend.length?pend.map(b=>
   '<div class="row"><span><span class="bname">'+esc(b.name)+'</span> <span class="bmeta">'+fmtDate(b)+'</span></span>'+
   '<span><button class="btn small" onclick="act('+b.id+',\'approve\')">✅ Принять</button> '+
