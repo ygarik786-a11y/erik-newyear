@@ -14,7 +14,7 @@ h1{font-size:2.2em;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,.5)}
 h2.sec{font-size:1.5em;margin:36px 0 18px}
 .builder{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;margin-bottom:10px}
 .builder label{display:block;color:#aaa;margin:12px 0 6px;font-size:.95em}
-.builder input[type=text],.builder input[type=datetime-local]{background:#141428;border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px 14px;border-radius:12px;font-size:1em;width:100%;max-width:340px}
+.builder input[type=text],.builder input[type=datetime-local],.builder input[type=date]{background:#141428;border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px 14px;border-radius:12px;font-size:1em;width:100%;max-width:340px}
 .bg-pick{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 .bg-opt{width:64px;height:64px;border-radius:14px;cursor:pointer;border:3px solid transparent;transition:all .2s}
 .bg-opt.sel{border-color:#4CAF50;transform:scale(1.08);box-shadow:0 0 14px rgba(76,175,80,.6)}
@@ -64,6 +64,18 @@ h2.sec{font-size:1.5em;margin:36px 0 18px}
 
 <h2 class="sec">🎉 Праздники</h2>
 <div class="grid" id="holidays"></div>
+
+<h2 class="sec">🎂 Дни рождения друзей</h2>
+<div class="grid" id="friends-bdays"></div>
+<div class="builder" style="margin-top:18px">
+<label>Твоё имя</label>
+<input type="text" id="bd-name" placeholder="Как тебя зовут" maxlength="40">
+<label>Твой день рождения</label>
+<input type="date" id="bd-date">
+<br>
+<button class="save-btn" id="bd-send">🎂 Отправить Erik</button>
+<p class="hint" id="bd-msg">Erik увидит заявку у себя и добавит — тогда день рождения появится здесь у всех</p>
+</div>
 
 <p class="footer">© 2026 Erik Lebed 🎄 Сделано с любовью<br><br><a href="https://eriksocial.pythonanywhere.com" style="color:#4CAF50;text-decoration:none;font-size:1.1em">🌐 Наша соцсеть E.Y.L</a> · <a href="/chat.html" style="color:#4CAF50;text-decoration:none;font-size:1.1em">💬 ErikTalk</a></p>
 </div>
@@ -159,8 +171,39 @@ function renderHol(){
 function tick(){
  loadEv().forEach((e,i)=>{const el=document.getElementById('my-cd-'+i);if(el)el.innerHTML=cdHTML(e.d)});
  HOLIDAYS.forEach((h,i)=>{const el=document.getElementById('hol-cd-'+i);if(el)el.innerHTML=cdHTML(h.fn())});
+ FRIENDS.forEach((b,i)=>{const el=document.getElementById('fb-cd-'+i);if(el)el.innerHTML=cdHTML(nextOccur(b.month-1,b.day))});
 }
+// Дни рождения друзей (сервер ErikTalk API)
+const API='https://eriktalk-api.onrender.com';
+let FRIENDS=[];
+async function loadFriends(){
+ try{const r=await fetch(API+'/api/birthdays');FRIENDS=await r.json()}catch(e){FRIENDS=[]}
+ const box=document.getElementById('friends-bdays');box.innerHTML='';
+ if(!FRIENDS.length){box.innerHTML='<p class="hint">Пока пусто — добавь свой день рождения ниже 🎂</p>';return}
+ FRIENDS.forEach((b,i)=>{
+  const t=nextOccur(b.month-1,b.day);
+  const el=document.createElement('div');el.className='card';
+  const age=b.year?(' · исполнится '+(t.getFullYear()-b.year)):'';
+  el.innerHTML='<div class="card-inner"><h3>🎂 '+String(b.name).replace(/</g,'&lt;')+'</h3><div class="cdate">'+t.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+age+'</div><div class="mini-cd" id="fb-cd-'+i+'"></div></div>';
+  box.appendChild(el);
+ });
+ tick();
+}
+document.getElementById('bd-send').onclick=async()=>{
+ const name=document.getElementById('bd-name').value.trim();
+ const dv=document.getElementById('bd-date').value;
+ const msg=document.getElementById('bd-msg');
+ if(!name){msg.textContent='Напиши имя, Зай 😉';return}
+ if(!dv){msg.textContent='Выбери дату рождения';return}
+ const p=dv.split('-');
+ try{
+  const r=await fetch(API+'/api/birthdays',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,day:+p[2],month:+p[1],year:+p[0]})});
+  if(r.ok){msg.textContent='✅ Отправлено! Erik проверит и добавит.';document.getElementById('bd-name').value='';document.getElementById('bd-date').value=''}
+  else msg.textContent='Не получилось отправить — попробуй ещё раз';
+ }catch(e){msg.textContent='Не получилось отправить — попробуй ещё раз'}
+};
 renderMy();renderHol();tick();setInterval(tick,1000);
+loadFriends();setInterval(loadFriends,60000);
 </script>
 </body>
 </html>

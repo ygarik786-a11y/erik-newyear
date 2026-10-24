@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔐</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#0a0e27 0%,#1a1a3e 50%,#0f2027 100%);color:#fff;min-height:100vh}
+.container{max-width:760px;margin:0 auto;padding:30px 16px}
+h1{font-size:1.5em;margin-bottom:16px;text-align:center}
+h2{font-size:1.15em;margin:26px 0 12px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;margin-bottom:14px}
+input[type=text],input[type=password],input[type=date],textarea{background:#141428;border:1px solid rgba(255,255,255,.2);color:#fff;padding:11px 13px;border-radius:10px;font-size:1em;width:100%;margin-bottom:10px}
+textarea{resize:vertical;min-height:64px}
+.btn{background:#4CAF50;border:none;color:#fff;padding:11px 22px;border-radius:10px;font-size:1em;cursor:pointer}
+.btn:hover{background:#45a049}
+.btn.small{padding:6px 13px;font-size:.9em}
+.btn.red{background:#8a2a2a}.btn.red:hover{background:#a33}
+.btn.grey{background:#33334f}.btn.grey:hover{background:#44446a}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);flex-wrap:wrap}
+.row:last-child{border-bottom:none}
+.bname{font-weight:600}
+.bmeta{color:#aaa;font-size:.88em}
+.msg{color:#aaffaa;min-height:20px;margin-top:8px;font-size:.95em}
+.err{color:#ff9a9a}
+.hidden{display:none}
+label.chk{display:flex;gap:7px;align-items:center;font-size:.9em;color:#ccc;cursor:pointer}
+.top{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔐 Админка</h1>
+
+<div class="card" id="setup-box" style="display:none">
+<h2>Придумай пароль админки</h2>
+<p class="bmeta" style="margin-bottom:10px">Это первый вход. Пароль задаёшь ты сам — он нигде больше не показывается.</p>
+<input type="password" id="setup-pw" placeholder="Пароль (от 4 символов)">
+<input type="password" id="setup-pw2" placeholder="Пароль ещё раз">
+<button class="btn" id="setup-btn">Сохранить пароль</button>
+<div class="msg" id="setup-msg"></div>
+</div>
+
+<div class="card" id="login-box" style="display:none">
+<h2>Вход</h2>
+<input type="password" id="login-pw" placeholder="Пароль админки">
+<button class="btn" id="login-btn">Войти</button>
+<div class="msg" id="login-msg"></div>
+</div>
+
+<div id="panel" style="display:none">
+<div class="top"><h2 style="margin:0">🎂 Дни рождения</h2><button class="btn grey small" id="logout-btn">Выйти</button></div>
+
+<div class="card">
+<h2 style="margin-top:0">📥 Заявки</h2>
+<div id="pending-list"><p class="bmeta">Загружаю…</p></div>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">📋 Все дни рождения</h2>
+<div id="all-list"><p class="bmeta">Загружаю…</p></div>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">➕ Добавить вручную</h2>
+<input type="text" id="add-name" placeholder="Имя" maxlength="40">
+<input type="date" id="add-date">
+<button class="btn" id="add-btn">Добавить</button>
+<div class="msg" id="add-msg"></div>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">📣 Объявление на главной</h2>
+<textarea id="ann-text" placeholder="Текст объявления (пусто — нет объявления)"></textarea>
+<button class="btn" id="ann-btn">Сохранить</button>
+<div class="msg" id="ann-msg"></div>
+</div>
+</div>
+</div>
+<script>
+const API='https://eriktalk-api.onrender.com';
+const TK='ny_admin_token';
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function token(){return localStorage.getItem(TK)||''}
+async function api(path,opts){
+ opts=opts||{};
+ opts.headers=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+token()},opts.headers||{});
+ const r=await fetch(API+path,opts);
+ return r;
+}
+function fmtDate(b){
+ const dd=String(b.day).padStart(2,'0'),mm=String(b.month).padStart(2,'0');
+ return dd+'.'+mm+(b.year?'.'+b.year:'');
+}
+function daysLeft(b){
+ const now=new Date();let t=new Date(now.getFullYear(),b.month-1,b.day);
+ if(t<new Date(now.getFullYear(),now.getMonth(),now.getDate()))t=new Date(now.getFullYear()+1,b.month-1,b.day);
+ return Math.round((t-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
+}
+async function init(){
+ if(token()){
+   const r=await api('/api/admin/birthdays');
+   if(r.ok){showPanel();loadAll();return}
+   localStorage.removeItem(TK);
+ }
+ const s=await (await fetch(API+'/api/admin/setup-status')).json();
+ if(!s.setup_done){$('setup-box').style.display='block'}
+ else{$('login-box').style.display='block'}
+}
+function showPanel(){$('setup-box').style.display='none';$('login-box').style.display='none';$('panel').style.display='block'}
+$('setup-btn').onclick=async()=>{
+ const p1=$('setup-pw').value,p2=$('setup-pw2').value,msg=$('setup-msg');
+ if(p1.length<4){msg.textContent='Пароль короткий — от 4 символов';msg.className='msg err';return}
+ if(p1!==p2){msg.textContent='Пароли не совпадают';msg.className='msg err';return}
+ const r=await fetch(API+'/api/admin/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+ if(!r.ok){msg.textContent='Не получилось. Возможно, пароль уже задан.';msg.className='msg err';return}
+ msg.textContent='✅ Пароль сохранён. Вхожу…';msg.className='msg';
+ doLogin(p1);
+};
+async function doLogin(pw){
+ const r=await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+ if(!r.ok){$('login-msg').textContent='Неверный пароль';$('login-msg').className='msg err';$('login-box').style.display='block';return}
+ const d=await r.json();
+ localStorage.setItem(TK,d.token);
+ showPanel();loadAll();
+}
+$('login-btn').onclick=()=>doLogin($('login-pw').value);
+$('login-pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('login-btn').click()});
+$('logout-btn').onclick=()=>{localStorage.removeItem(TK);location.reload()};
+async function loadAll(){
+ const r=await api('/api/admin/birthdays');
+ if(!r.ok){localStorage.removeItem(TK);location.reload();return}
+ const list=await r.json();
+ const pend=list.filter(b=>b.status!=='approved');
+ const appr=list.filter(b=>b.status==='approved');
+ $('pending-list').innerHTML=pend.length?pend.map(b=>
+  '<div class="row"><span><span class="bname">'+esc(b.name)+'</span> <span class="bmeta">'+fmtDate(b)+'</span></span>'+
+  '<span><button class="btn small" onclick="act('+b.id+',\'approve\')">✅ Принять</button> '+
+  '<button class="btn red small" onclick="act('+b.id+',\'delete\')">🗑 Отклонить</button></span></div>').join('')
+  :'<p class="bmeta">Заявок нет</p>';
+ $('all-list').innerHTML=appr.length?appr.map(b=>{
+  const dl=daysLeft(b);
+  const when=dl===0?'🎉 сегодня!':'через '+dl+' дн.';
+  return '<div class="row"><span><span class="bname">'+esc(b.name)+'</span> <span class="bmeta">'+fmtDate(b)+' · '+when+'</span></span>'+
+  '<span style="display:flex;gap:10px;align-items:center"><label class="chk"><input type="checkbox" '+(b.public?'checked':'')+' onchange="togglePub('+b.id+',this.checked)"> Показывать всем</label>'+
+  '<button class="btn red small" onclick="act('+b.id+',\'delete\')">🗑</button></span></div>'}).join('')
+  :'<p class="bmeta">Пока пусто</p>';
+ const a=await (await fetch(API+'/api/announcement')).json();
+ $('ann-text').value=a.text||'';
+}
+async function act(id,kind){
+ await api('/api/admin/birthdays/'+id+'/'+kind,{method:'POST'});
+ loadAll();
+}
+async function togglePub(id,val){
+ await api('/api/admin/birthdays/'+id+'/public',{method:'POST',body:JSON.stringify({public:val})});
+}
+$('add-btn').onclick=async()=>{
+ const name=$('add-name').value.trim(),dv=$('add-date').value,msg=$('add-msg');
+ if(!name||!dv){msg.textContent='Надо имя и дату';msg.className='msg err';return}
+ const p=dv.split('-');
+ const r=await api('/api/admin/birthdays',{method:'POST',body:JSON.stringify({name:name,day:+p[2],month:+p[1],year:+p[0]})});
+ if(r.ok){msg.textContent='✅ Добавлено';msg.className='msg';$('add-name').value='';$('add-date').value='';loadAll()}
+ else{msg.textContent='Не получилось';msg.className='msg err'}
+};
+$('ann-btn').onclick=async()=>{
+ const r=await api('/api/admin/announcement',{method:'POST',body:JSON.stringify({text:$('ann-text').value})});
+ $('ann-msg').textContent=r.ok?'✅ Сохранено':'Не получилось';
+ $('ann-msg').className='msg'+(r.ok?'':' err');
+};
+init();
+</script>
+</body>
+</html>

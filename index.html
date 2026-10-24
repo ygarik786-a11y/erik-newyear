@@ -56,6 +56,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 </head>
 <body>
 <nav class="topnav"><a href="/">🏠 Главная</a><a href="/countdown.html">⏳ Отсчёты</a><a href="/chat.html">💬 ErikTalk</a><a href="https://eriksocial.pythonanywhere.com">🌐 E.Y.L</a></nav>
+<div id="announce" style="display:none;position:relative;z-index:3;max-width:900px;margin:10px auto 0;padding:12px 18px;background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.5);border-radius:12px;text-align:center;font-size:1.05em"></div>
 <canvas class="snow" id="snow"></canvas>
 <div class="garland" id="garland"></div>
 <div class="container">
@@ -119,6 +120,11 @@ const p=document.getElementById('player');
 p.preload='none';
 document.querySelectorAll('.station-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.station-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');try{p.pause()}catch(e){}p.src=b.dataset.url;p.load();const pr=p.play();if(pr&&pr.catch)pr.catch(e=>{b.textContent+=' (ошибка)';setTimeout(()=>{b.textContent=b.textContent.replace(' (ошибка)','')},3000)})});
 p.addEventListener('error',()=>{document.querySelectorAll('.station-btn.active').forEach(b=>{b.textContent+=' ⚠️';setTimeout(()=>{b.textContent=b.textContent.replace(' ⚠️','')},3000)})});
+</script>
+<script>
+fetch('https://eriktalk-api.onrender.com/api/announcement').then(r=>r.json()).then(d=>{
+ if(d && d.text){const el=document.getElementById('announce');el.textContent='📣 '+d.text;el.style.display='block'}
+}).catch(e=>{});
 </script>
 </body>
 </html>
