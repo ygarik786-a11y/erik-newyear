@@ -97,6 +97,29 @@ label.chk{display:flex;gap:7px;align-items:center;font-size:.9em;color:#ccc;curs
 <button class="btn" id="ann-btn">Сохранить</button>
 <div class="msg" id="ann-msg"></div>
 </div>
+
+<div class="card">
+<h2 style="margin-top:0">🕐 Цвет часов</h2>
+<p class="bmeta" style="margin-bottom:10px">Цвет цифр: часы и отсчёт на главной + все таймеры на «Отсчётах».</p>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<input type="color" id="color-pick" value="#aaff00" style="width:64px;height:44px;padding:2px;background:#141428;border:1px solid rgba(255,255,255,.2);border-radius:10px">
+<button class="btn" id="color-btn">Сохранить цвет</button>
+<button class="btn grey" id="color-reset">Разные цвета</button>
+</div>
+<div class="msg" id="color-msg"></div>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">💬 Управление чатом ErikTalk</h2>
+<p class="bmeta" style="margin-bottom:6px">Сейчас в чате:</p>
+<div id="chat-online"><p class="bmeta">Загружаю…</p></div>
+<p class="bmeta" style="margin:14px 0 6px">Заблокированные:</p>
+<div id="chat-bans"><p class="bmeta">Загружаю…</p></div>
+<p class="bmeta" style="margin:16px 0 6px">Твой PIN админа чата <span id="pin-status"></span> — впиши его при входе в ErikTalk, и у твоего ника будет 👑 АДМИН:</p>
+<input type="password" id="chat-pin" placeholder="PIN (от 4 символов)" maxlength="20">
+<button class="btn" id="pin-btn">Сохранить PIN</button>
+<div class="msg" id="pin-msg"></div>
+</div>
 </div>
 </div>
 <script>
@@ -198,7 +221,51 @@ async function loadAll(){
   :'<p class="bmeta">Пока пусто</p>';
  const a=await (await fetch(API+'/api/announcement')).json();
  $('ann-text').value=a.text||'';
+ const cc=await (await fetch(API+'/api/clock-color')).json().catch(()=>({}));
+ if(cc && cc.color)$('color-pick').value=cc.color;
+ loadChat();
 }
+async function loadChat(){
+ const r=await api('/api/admin/chat/overview');
+ if(!r.ok)return;
+ const d=await r.json();
+ const ROOMN={general:'🏠 Общая',music:'🎵 Музыка',games:'🎮 Игры',random:'🎲 Болталка',links:'🔗 Ссылки'};
+ $('chat-online').innerHTML=d.online.length?d.online.map(u=>
+  '<div class="row"><span><span class="bname" style="color:'+esc(u.color||'#fff')+'">'+esc(u.nick)+'</span> <span class="bmeta">'+(ROOMN[u.room]||'💌 Личка')+(u.admin?' · 👑 АДМИН':'')+'</span></span>'+
+  (u.admin?'':'<span><button class="btn red small" data-n="'+esc(u.nick).replace(/"/g,'&quot;')+'" onclick="banNick(this.getAttribute(\'data-n\'))">🚫 Заблокировать</button></span>')+'</div>').join('')
+  :'<p class="bmeta">Сейчас пусто</p>';
+ $('chat-bans').innerHTML=d.bans.length?d.bans.map(n=>
+  '<div class="row"><span class="bname">'+esc(n)+'</span><span><button class="btn small" data-n="'+esc(n).replace(/"/g,'&quot;')+'" onclick="unbanNick(this.getAttribute(\'data-n\'))">✅ Разблокировать</button></span></div>').join('')
+  :'<p class="bmeta">Никого нет</p>';
+ $('pin-status').textContent=d.pin_set?'(задан ✅)':'(ещё не задан)';
+}
+async function banNick(nick){
+ if(!confirm('Заблокировать '+nick+' в чате?'))return;
+ await api('/api/admin/chat/ban',{method:'POST',body:JSON.stringify({nick:nick})});
+ loadChat();statOnline();
+}
+async function unbanNick(nick){
+ await api('/api/admin/chat/unban',{method:'POST',body:JSON.stringify({nick:nick})});
+ loadChat();
+}
+$('pin-btn').onclick=async()=>{
+ const pin=$('chat-pin').value.trim(),msg=$('pin-msg');
+ if(pin.length<4){msg.textContent='PIN короткий — от 4 символов';msg.className='msg err';return}
+ const r=await api('/api/admin/chat/pin',{method:'POST',body:JSON.stringify({pin:pin})});
+ msg.textContent=r.ok?'✅ PIN сохранён. Теперь впиши его при входе в чат':'Не получилось';
+ msg.className='msg'+(r.ok?'':' err');
+ if(r.ok){$('chat-pin').value='';loadChat()}
+};
+$('color-btn').onclick=async()=>{
+ const r=await api('/api/admin/clock-color',{method:'POST',body:JSON.stringify({color:$('color-pick').value})});
+ $('color-msg').textContent=r.ok?'✅ Цвет сохранён — обнови сайт и глянь':'Не получилось';
+ $('color-msg').className='msg'+(r.ok?'':' err');
+};
+$('color-reset').onclick=async()=>{
+ const r=await api('/api/admin/clock-color',{method:'POST',body:JSON.stringify({color:''})});
+ $('color-msg').textContent=r.ok?'✅ Вернул как было: у каждого праздника свой цвет':'Не получилось';
+ $('color-msg').className='msg'+(r.ok?'':' err');
+};
 async function act(id,kind){
  await api('/api/admin/birthdays/'+id+'/'+kind,{method:'POST'});
  loadAll();

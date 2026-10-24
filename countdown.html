@@ -167,7 +167,7 @@ function renderMy(){
  a.forEach((e,i)=>{
   const eff=effTarget(e);
   const el=document.createElement('div');el.className='card';el.style.background=e.bg||BGS[0].v;
-  el.style.setProperty('--cd-color',CD_COLORS[i%CD_COLORS.length]);
+  el.style.setProperty('--cd-color',window.CLOCK_COLOR||CD_COLORS[i%CD_COLORS.length]);
   let dateTxt;
   if(eff.rolled){
    dateTxt=eff.t.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+' · 🎂 каждый год';
@@ -185,7 +185,7 @@ function renderHol(){
  HOLIDAYS.forEach((h,i)=>{
   const t=h.fn();
   const el=document.createElement('div');el.className='card';
-  el.style.setProperty('--cd-color',h.c);
+  el.style.setProperty('--cd-color',window.CLOCK_COLOR||h.c);
   el.innerHTML='<div class="card-inner"><h3>'+h.e+' '+h.n+'</h3><div class="cdate">'+t.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+'</div><div class="mini-cd" id="hol-cd-'+i+'"></div></div>';
   box.appendChild(el);
  });
@@ -205,7 +205,7 @@ async function loadFriends(){
  FRIENDS.forEach((b,i)=>{
   const t=nextOccur(b.month-1,b.day);
   const el=document.createElement('div');el.className='card';
-  el.style.setProperty('--cd-color','#4dd8ff');
+  el.style.setProperty('--cd-color',window.CLOCK_COLOR||'#4dd8ff');
   const age=b.year?(' · исполнится '+(t.getFullYear()-b.year)):'';
   el.innerHTML='<div class="card-inner"><h3>🎂 '+String(b.name).replace(/</g,'&lt;')+'</h3><div class="cdate">'+t.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+age+'</div><div class="mini-cd" id="fb-cd-'+i+'"></div></div>';
   box.appendChild(el);
@@ -227,6 +227,10 @@ document.getElementById('bd-send').onclick=async()=>{
 };
 renderMy();renderHol();tick();setInterval(tick,1000);
 loadFriends();setInterval(loadFriends,60000);
+// Цвет часов из админки: если Erik выбрал свой — все таймеры одним цветом
+fetch(API+'/api/clock-color').then(r=>r.json()).then(d=>{
+ if(d && d.color){window.CLOCK_COLOR=d.color;renderMy();renderHol();loadFriends()}
+}).catch(e=>{});
 </script>
 </body>
 </html>
