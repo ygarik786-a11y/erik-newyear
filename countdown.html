@@ -24,9 +24,10 @@ h2.sec{font-size:1.5em;margin:36px 0 18px}
 .card-inner{position:relative;z-index:2;background:rgba(0,0,0,.45);border-radius:14px;padding:16px}
 .card h3{font-size:1.3em;margin-bottom:4px}
 .card .cdate{color:#ccc;font-size:.9em;margin-bottom:12px}
-.mini-cd{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
-.mini-box{background:#1a1a1a;border:2px solid #333;border-radius:10px;padding:8px;min-width:64px}
-.mini-num{font-size:1.6em;font-weight:bold;color:#aaff00;text-shadow:0 0 8px rgba(170,255,0,.8);font-variant-numeric:tabular-nums;font-family:'Courier New',monospace;background:#0a0f0a;padding:4px;border-radius:6px}
+.mini-cd{display:flex;justify-content:center;gap:6px;flex-wrap:nowrap}
+.mini-box{background:#1a1a1a;border:2px solid #333;border-radius:10px;padding:8px 4px;flex:1 1 0;min-width:0;max-width:86px}
+.mini-num{font-size:1.5em;font-weight:bold;color:var(--cd-color,#aaff00);text-shadow:0 0 8px var(--cd-color,#aaff00);font-variant-numeric:tabular-nums;font-family:'Courier New',monospace;background:#0a0f0a;padding:4px 2px;border-radius:6px}
+@media (max-width:420px){.mini-num{font-size:1.15em}.mini-label{font-size:.62em}}
 .mini-label{color:#888;margin-top:4px;font-size:.72em;text-transform:uppercase;letter-spacing:1px}
 .del-btn{position:absolute;top:10px;right:10px;z-index:3;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1em}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -58,7 +59,7 @@ h2.sec{font-size:1.5em;margin:36px 0 18px}
 <div class="bg-pick" id="bg-pick"></div>
 <br>
 <button class="save-btn" id="ev-save">💾 Сохранить и запустить</button>
-<p class="hint">Отсчёты хранятся в твоём браузере — ничего никуда не отправляется</p>
+<p class="hint">Отсчёты хранятся в твоём браузере. Если дата уже прошла — например, день рождения — отсчёт сам перейдёт на следующий год и будет считать до него 🎂</p>
 </div>
 <div id="my-events"></div>
 
@@ -117,6 +118,16 @@ document.getElementById('ev-save').onclick=()=>{
 function delEv(i){const a=loadEv();a.splice(i,1);saveEv(a);renderMy();tick()}
 function fmt(n){return n<0?0:n}
 
+// Цель своего отсчёта: если дата уже прошла (день рождения родственника и т.п.) —
+// считаем до следующего года, та же дата и время. Возвращает {t, rolled, years}
+function effTarget(e){
+ const src=new Date(e.d);const now=new Date();
+ if(src>now)return{t:src,rolled:false,years:0};
+ let t=new Date(now.getFullYear(),src.getMonth(),src.getDate(),src.getHours(),src.getMinutes(),0);
+ if(t<=now)t=new Date(now.getFullYear()+1,src.getMonth(),src.getDate(),src.getHours(),src.getMinutes(),0);
+ return{t:t,rolled:true,years:t.getFullYear()-src.getFullYear()};
+}
+
 // Следующее наступление праздника: месяц m (0-11), день d
 function nextOccur(m,d){
  const now=new Date();let y=now.getFullYear();
@@ -134,13 +145,14 @@ function mothersDay(){
  }
 }
 const HOLIDAYS=[
- {e:'🎄',n:'Новый год',fn:()=>nextOccur(0,1)},
- {e:'⭐',n:'Рождество Христово',fn:()=>nextOccur(0,7)},
- {e:'🎂',n:'День рождения Erik',fn:()=>nextOccur(1,2)},
- {e:'💘',n:'День святого Валентина',fn:()=>nextOccur(1,14)},
- {e:'💐',n:'День матери',fn:mothersDay},
- {e:'🎃',n:'Хэллоуин',fn:()=>nextOccur(9,31)}
+ {e:'🎄',n:'Новый год',c:'#aaff00',fn:()=>nextOccur(0,1)},
+ {e:'⭐',n:'Рождество Христово',c:'#ffd700',fn:()=>nextOccur(0,7)},
+ {e:'🎂',n:'День рождения Erik',c:'#ff6ec7',fn:()=>nextOccur(1,2)},
+ {e:'💘',n:'День святого Валентина',c:'#ff4d6d',fn:()=>nextOccur(1,14)},
+ {e:'💐',n:'День матери',c:'#c77dff',fn:mothersDay},
+ {e:'🎃',n:'Хэллоуин',c:'#ff8c1a',fn:()=>nextOccur(9,31)}
 ];
+const CD_COLORS=['#aaff00','#4dd8ff','#ff6ec7','#ffd700','#c77dff','#ff8c1a','#7dff6a','#ff5a5a'];
 
 function cdHTML(target,prefix){
  const n=target-new Date();
@@ -153,8 +165,17 @@ function renderMy(){
  const box=document.getElementById('my-events');box.innerHTML='';
  const a=loadEv();
  a.forEach((e,i)=>{
+  const eff=effTarget(e);
   const el=document.createElement('div');el.className='card';el.style.background=e.bg||BGS[0].v;
-  el.innerHTML='<button class="del-btn" title="Удалить">✕</button><div class="card-inner"><h3>'+e.t.replace(/</g,'&lt;')+'</h3><div class="cdate">'+new Date(e.d).toLocaleString('ru-RU')+'</div><div class="mini-cd" id="my-cd-'+i+'"></div></div>';
+  el.style.setProperty('--cd-color',CD_COLORS[i%CD_COLORS.length]);
+  let dateTxt;
+  if(eff.rolled){
+   dateTxt=eff.t.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+' · 🎂 каждый год';
+   if(eff.years>0&&eff.years<120)dateTxt+=' · исполнится '+eff.years;
+  }else{
+   dateTxt=new Date(e.d).toLocaleString('ru-RU');
+  }
+  el.innerHTML='<button class="del-btn" title="Удалить">✕</button><div class="card-inner"><h3>'+e.t.replace(/</g,'&lt;')+'</h3><div class="cdate">'+dateTxt+'</div><div class="mini-cd" id="my-cd-'+i+'"></div></div>';
   el.querySelector('.del-btn').onclick=()=>delEv(i);
   box.appendChild(el);
  });
@@ -164,12 +185,13 @@ function renderHol(){
  HOLIDAYS.forEach((h,i)=>{
   const t=h.fn();
   const el=document.createElement('div');el.className='card';
+  el.style.setProperty('--cd-color',h.c);
   el.innerHTML='<div class="card-inner"><h3>'+h.e+' '+h.n+'</h3><div class="cdate">'+t.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+'</div><div class="mini-cd" id="hol-cd-'+i+'"></div></div>';
   box.appendChild(el);
  });
 }
 function tick(){
- loadEv().forEach((e,i)=>{const el=document.getElementById('my-cd-'+i);if(el)el.innerHTML=cdHTML(e.d)});
+ loadEv().forEach((e,i)=>{const el=document.getElementById('my-cd-'+i);if(el)el.innerHTML=cdHTML(effTarget(e).t)});
  HOLIDAYS.forEach((h,i)=>{const el=document.getElementById('hol-cd-'+i);if(el)el.innerHTML=cdHTML(h.fn())});
  FRIENDS.forEach((b,i)=>{const el=document.getElementById('fb-cd-'+i);if(el)el.innerHTML=cdHTML(nextOccur(b.month-1,b.day))});
 }
@@ -183,6 +205,7 @@ async function loadFriends(){
  FRIENDS.forEach((b,i)=>{
   const t=nextOccur(b.month-1,b.day);
   const el=document.createElement('div');el.className='card';
+  el.style.setProperty('--cd-color','#4dd8ff');
   const age=b.year?(' · исполнится '+(t.getFullYear()-b.year)):'';
   el.innerHTML='<div class="card-inner"><h3>🎂 '+String(b.name).replace(/</g,'&lt;')+'</h3><div class="cdate">'+t.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+age+'</div><div class="mini-cd" id="fb-cd-'+i+'"></div></div>';
   box.appendChild(el);
