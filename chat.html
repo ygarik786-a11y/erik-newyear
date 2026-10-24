@@ -118,11 +118,10 @@ function applyLang(){
 }
 
 function toggleTheme(){document.body.classList.toggle("light");localStorage.setItem("et-theme",document.body.classList.contains("light")?"light":"dark")}
+const rooms=[["general","general"],["music","music"],["games","games"],["random","random"],["links","links"]];
 if(localStorage.getItem("et-theme")==="light")document.body.classList.add("light");
 if(localStorage.getItem("et-nick"))document.getElementById("nick").value=localStorage.getItem("et-nick");
 applyLang();
-
-const rooms=[["general","general"],["music","music"],["games","games"],["random","random"],["links","links"]];
 function renderRooms(){
   let h=rooms.map(r=>`<button class="room-btn${r[0]===room?' active':''}" onclick="switchRoom('${r[0]}')">${t("rooms")[r[0]]}</button>`).join("");
   if(dmPeer)h+=` <button class="room-btn dm-chip" onclick="closeDM()">${t("dmBack")} 💌 ${esc(dmPeer)}</button>`;
@@ -199,8 +198,8 @@ async function loadMsgs(){
     msgs.forEach(m=>{
       lastId=Math.max(lastId,m.id);
       const d=new Date(m.ts*1000);
-      const t=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
-      box.innerHTML+=`<div class="msg"><span class="nick" data-n="${escq(m.nick)}" onclick="openDM(this.getAttribute('data-n'))" title="${t("dmHint")}" style="color:${esc(m.color)}">${esc(m.nick)}</span>${m.admin?'<span class="adm-tag">👑 АДМИН</span>':''}<span class="time">${t}</span>: ${esc(m.text)}</div>`;
+      const tm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+      box.innerHTML+=`<div class="msg"><span class="nick" data-n="${escq(m.nick)}" onclick="openDM(this.getAttribute('data-n'))" title="${t("dmHint")}" style="color:${esc(m.color)}">${esc(m.nick)}</span>${m.admin?'<span class="adm-tag">👑 АДМИН</span>':''}<span class="time">${tm}</span>: ${esc(m.text)}</div>`;
     });
     if(msgs.length)box.scrollTop=box.scrollHeight;
   }catch(e){}
