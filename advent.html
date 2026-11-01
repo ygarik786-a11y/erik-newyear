@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎁 Адвент-календарь — Erik New Year</title>
+<meta name="description" content="Адвент-календарь Erik New Year: каждый день декабря — новое окошко с сюрпризом. От компании E.Y.L.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#0a0e27 0%,#1a1a3e 50%,#0f2027 100%);color:#fff;min-height:100vh;overflow-x:hidden}
+.snow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.topnav{position:relative;z-index:3;display:flex;justify-content:center;gap:8px;padding:12px;flex-wrap:wrap}
+.topnav a{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;font-size:.95em;transition:all .3s}
+.topnav a:hover{background:rgba(255,255,255,.18)}
+.topnav a.active{background:#4CAF50;border-color:#4CAF50}
+.container{position:relative;z-index:2;max-width:820px;margin:0 auto;padding:24px 16px 50px;text-align:center}
+h1{font-size:2.2em;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,.5);cursor:pointer;user-select:none}
+.subtitle{color:#aaa;margin-bottom:8px;font-size:1.05em}
+#status{color:#ffd54f;margin-bottom:26px;font-size:1.05em;min-height:1.4em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}
+.door{position:relative;border-radius:16px;padding:20px 6px 16px;cursor:pointer;border:2px solid rgba(255,255,255,.15);transition:transform .2s, box-shadow .2s;overflow:hidden}
+.door:hover{transform:translateY(-3px)}
+.door .num{font-size:1.9em;font-weight:800;line-height:1}
+.door .lbl{font-size:.78em;color:#ddd;margin-top:6px}
+.door.locked{background:linear-gradient(160deg,#263159,#171f3d);color:#8fa0c8;cursor:not-allowed}
+.door.locked:hover{transform:none}
+.door.ready{background:linear-gradient(160deg,#b71c1c,#7f1010);border-color:#ffd54f;box-shadow:0 0 14px rgba(255,213,79,.35)}
+.door.ready .lbl{color:#ffe082}
+.door.opened{background:linear-gradient(160deg,#1b5e20,#0e3d14);border-color:#81c784}
+.door.opened .lbl{color:#a5d6a7}
+.door .st{position:absolute;top:6px;right:10px;font-size:.95em}
+.garland{display:flex;justify-content:center;gap:8px;padding:8px 0 4px;flex-wrap:wrap}
+.garland-light{width:13px;height:13px;border-radius:50%;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1;box-shadow:0 0 12px currentColor}}
+.footer{color:#666;margin-top:36px;font-size:.9em}
+.footer a{color:#9db2e0}
+/* Модалка с подарком */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:10;padding:18px}
+#modal.show{display:flex}
+.card{background:linear-gradient(170deg,#1c2450,#12172f);border:2px solid #ffd54f;border-radius:22px;max-width:440px;width:100%;padding:30px 26px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:pop .3s ease}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.card .big{font-size:3em;margin-bottom:10px}
+.card h2{font-size:1.35em;margin-bottom:12px;color:#ffd54f}
+.card p{font-size:1.08em;line-height:1.5;color:#eef}
+.card button{margin-top:22px;background:#4CAF50;border:none;color:#fff;font-size:1em;padding:12px 30px;border-radius:12px;cursor:pointer}
+.card button:hover{background:#43a047}
+</style>
+</head>
+<body>
+<nav class="topnav"><a href="/">🏠 Главная</a><a href="/countdown.html">⏳ Отсчёты</a><a href="/advent.html" class="active">🎁 Календарь</a><a href="/chat.html">💬 ErikTalk</a><a href="https://eriksocial.alwaysdata.net">🌐 E.Y.L</a></nav>
+<canvas class="snow" id="snow"></canvas>
+<div class="container">
+  <div class="garland" id="garland"></div>
+  <h1 id="title">🎁 Адвент-календарь</h1>
+  <div class="subtitle">Каждый день декабря — новое окошко с сюрпризом ✨</div>
+  <div id="status"></div>
+  <div class="grid" id="grid"></div>
+  <div class="footer">От компании <b>E.Y.L</b> 👑 · <a href="https://eriksocial.alwaysdata.net">Наша соцсеть E.Y.L</a></div>
+</div>
+
+<div id="modal"><div class="card">
+  <div class="big" id="mEmoji">🎁</div>
+  <h2 id="mTitle">День</h2>
+  <p id="mText"></p>
+  <button onclick="closeModal()">Забрать 🎄</button>
+</div></div>
+
+<script>
+const GIFTS = {
+ 1:["🎄","Декабрь начался! До Нового года 30 дней — погнали, президент!"],
+ 2:["⭐","Пожелание на сегодня: пусть случится что-то маленькое и приятное."],
+ 3:["🍬","Сладкий день: съешь что-нибудь вкусное просто так, без повода."],
+ 4:["🎮","Загляни в игру «Инфы» и поболтай с компанией — они скучали."],
+ 5:["❄️","Факт дня: снежинка падает на землю со скоростью примерно 1 метр в секунду. Успеешь рассмотреть!"],
+ 6:["🐶","День Линды: обними её и скажи, что она самая лучшая. Ей положено по календарю."],
+ 7:["🎁","Хороший день, чтобы подарить подарок кому-нибудь в E.Y.L."],
+ 8:["🌐","Загляни в свою соцсеть E.Y.L — там свои люди и всё по-твоему."],
+ 9:["😂","Шутка дня: — Дед Мороз, хочу дракона! — Будь реалистом... — Тогда хочу, чтобы все стали добрее. — Какого цвета дракона?"],
+ 10:["🎬","Вечер кино: включи любимый сериал. «Сверхъестественное» всегда кстати."],
+ 11:["🏆","Напоминание: ты — президент компании E.Y.L. И это круто."],
+ 12:["🎵","Музыкальный день: послушай свои треки в разделе «Моя музыка» в E.Y.L."],
+ 13:["🏎️","Поиграй в «Уличные гонки» на E.Y.L Games — твой Гелик ждёт гонку."],
+ 14:["💌","Напиши Юрке что-нибудь хорошее. Он твой вице-президент и брат."],
+ 15:["❄️","Половина пути пройдена! До Нового года осталось 16 дней."],
+ 16:["🌟","Загадай маленькое желание. Декабрь такие желания очень любит."],
+ 17:["🎄","Наряди что-нибудь дома. Хоть кружку. Праздник начинается с мелочей."],
+ 18:["📸","Сделай сегодня уютное фото — зимние фотографии самые тёплые."],
+ 19:["🎁","День подарков: загляни в каталог подарков E.Y.L — там тыквы, привидения и сладости."],
+ 20:["🍊","Мандариновый день! Запах мандаринов — это запах Нового года."],
+ 21:["🌙","Самая длинная ночь года позади. Дальше дни будут только длиннее."],
+ 22:["🥊","E.Y.L KOMBAT зовёт: кто сегодня победит — ты или Юрка?"],
+ 23:["🧦","Проверка: подарки близким готовы? Осталась одна неделя."],
+ 24:["🎅","Сегодня Сочельник у многих в мире. А у нас — генеральная репетиция праздника."],
+ 25:["🎄","С Рождеством всех, кто празднует сегодня! Мира, тепла и добра."],
+ 26:["❄️","До Нового года 5 дней. Как настроение, президент?"],
+ 27:["📝","Напиши своё желание Деду Морозу — 1 января оно торжественно покажется."],
+ 28:["🎆","Скоро салют! В новогоднюю ночь на этом сайте будет фейерверк."],
+ 29:["🌟","Вспомни самое хорошее, что случилось в этом году. Уверен, есть что."],
+ 30:["🎉","Завтра Новый год! Приготовь что-нибудь вкусное и наряди ёлку."],
+ 31:["🎆","С наступающим Новым годом! В полночь заходи на главную — там поздравление и салют!"]
+};
+const $grid = document.getElementById('grid');
+const $status = document.getElementById('status');
+const opened = new Set(JSON.parse(localStorage.getItem('eyl_advent_opened') || '[]'));
+let preview = localStorage.getItem('eyl_advent_preview') === '1';
+
+function today(){
+  // Для проверки перед декабрём: ?preview=1 или 5 нажатий на заголовок
+  const n = new Date();
+  return { m: n.getMonth()+1, d: n.getDate() };
+}
+function canOpen(day){
+  if (preview) return true;
+  const t = today();
+  if (t.m < 12) return false;
+  return t.d >= day;
+}
+function render(){
+  const t = today();
+  if (preview) $status.textContent = '🔓 Режим создателя: все окошки открыты';
+  else if (t.m < 12) $status.textContent = 'Календарь начнётся 1 декабря — заглядывай каждый день! 🎄';
+  else if (t.m === 12) $status.textContent = 'Сегодня ' + t.d + ' декабря — открыто окошек: ' + opened.size + ' из 31';
+  else $status.textContent = 'Декабрь закончился — с Новым годом! 🎆';
+  $grid.innerHTML = '';
+  for (let d = 1; d <= 31; d++){
+    const div = document.createElement('div');
+    const isOpen = opened.has(d), ready = canOpen(d);
+    div.className = 'door ' + (isOpen ? 'opened' : ready ? 'ready' : 'locked');
+    div.innerHTML = '<div class="st">' + (isOpen ? '✅' : ready ? '🎁' : '🔒') + '</div>' +
+                    '<div class="num">' + d + '</div><div class="lbl">декабря</div>';
+    div.onclick = () => {
+      if (!canOpen(d)) {
+        if (!preview) alert('Это окошко откроется ' + d + ' декабря 🎄');
+        return;
+      }
+      opened.add(d);
+      localStorage.setItem('eyl_advent_opened', JSON.stringify([...opened]));
+      const g = GIFTS[d];
+      document.getElementById('mEmoji').textContent = g[0];
+      document.getElementById('mTitle').textContent = d + ' декабря';
+      document.getElementById('mText').textContent = g[1];
+      document.getElementById('modal').classList.add('show');
+      render();
+    };
+    $grid.appendChild(div);
+  }
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+
+// Секрет создателя: 5 быстрых нажатий на заголовок — открыть всё для проверки
+let taps = [];
+document.getElementById('title').addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t < 2500); taps.push(now);
+  if (taps.length >= 5) {
+    preview = !preview;
+    localStorage.setItem('eyl_advent_preview', preview ? '1' : '0');
+    taps = []; render();
+  }
+});
+if (new URLSearchParams(location.search).get('preview') === '1') { preview = true; }
+
+// Гирлянда
+const colors = ['#ff5252','#ffd54f','#69f0ae','#40c4ff','#e040fb'];
+const gar = document.getElementById('garland');
+for (let i = 0; i < 18; i++){
+  const s = document.createElement('div');
+  s.className = 'garland-light';
+  s.style.background = colors[i % colors.length];
+  s.style.color = colors[i % colors.length];
+  s.style.animationDelay = (i * 0.15) + 's';
+  gar.appendChild(s);
+}
+
+// Снег
+const cv = document.getElementById('snow'), ctx = cv.getContext('2d');
+let W, H, flakes = [];
+function sizeSnow(){ W = cv.width = innerWidth; H = cv.height = innerHeight;
+  flakes = Array.from({length: 90}, () => ({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*2.4+0.6, s: Math.random()*0.9+0.3, o: Math.random()*0.5+0.3 })); }
+sizeSnow(); addEventListener('resize', sizeSnow);
+(function drawSnow(){
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#fff';
+  for (const f of flakes){
+    ctx.globalAlpha = f.o; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    f.y += f.s; f.x += Math.sin(f.y / 40) * 0.3;
+    if (f.y > H) { f.y = -4; f.x = Math.random()*W; }
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawSnow);
+})();
+
+render();
+</script>
+</body>
+</html>
