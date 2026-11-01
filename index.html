@@ -166,6 +166,9 @@ fetch('https://eriktalk-api.onrender.com/api/clock-color').then(r=>r.json()).the
   else if(new URLSearchParams(location.search).get('salut')==='1'){ celebrate(); }
   let taps=[]; const h1=document.querySelector('h1');
   if(h1) h1.addEventListener('click',()=>{ const now=Date.now(); taps=taps.filter(t=>now-t<2500); taps.push(now); if(taps.length>=5){ taps=[]; celebrate(); } });
+  // Если страница уже открыта в новогоднюю ночь — салют сам включится в 0:00
+  let fired=isNY;
+  setInterval(()=>{ const d=new Date(); if(!fired && d.getMonth()===0 && d.getDate()===1){ fired=true; const h=document.querySelector('h1'); if(h) h.textContent='🎆 С Новым 2027 годом!'; celebrate(); } }, 10000);
 })();
 </script>
 </body>
