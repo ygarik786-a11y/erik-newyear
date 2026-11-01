@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎅 Желание Деду Морозу — Erik New Year</title>
+<meta name="description" content="Напиши желание Деду Морозу — оно торжественно откроется 1 января. От компании E.Y.L.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#0a0e27 0%,#1a1a3e 50%,#0f2027 100%);color:#fff;min-height:100vh;overflow-x:hidden}
+.snow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.topnav{position:relative;z-index:3;display:flex;justify-content:center;gap:8px;padding:12px;flex-wrap:wrap}
+.topnav a{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;font-size:.95em;transition:all .3s}
+.topnav a:hover{background:rgba(255,255,255,.18)}
+.topnav a.active{background:#4CAF50;border-color:#4CAF50}
+.container{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:24px 16px 50px;text-align:center}
+h1{font-size:2.1em;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,.5)}
+.subtitle{color:#aaa;margin-bottom:26px;font-size:1.05em}
+.box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px 22px}
+textarea{width:100%;min-height:120px;background:#12172f;border:2px solid rgba(255,255,255,.2);border-radius:14px;color:#fff;font-size:1.1em;padding:14px;font-family:inherit;resize:vertical}
+textarea:focus{outline:none;border-color:#ffd54f}
+input[type=text]{width:100%;background:#12172f;border:2px solid rgba(255,255,255,.2);border-radius:14px;color:#fff;font-size:1.05em;padding:12px 14px;margin-bottom:14px;font-family:inherit}
+input[type=text]:focus{outline:none;border-color:#ffd54f}
+.btn{background:#c62828;border:none;color:#fff;font-size:1.1em;padding:14px 34px;border-radius:14px;cursor:pointer;margin-top:16px;transition:all .3s}
+.btn:hover{background:#e53935;box-shadow:0 0 18px rgba(229,57,53,.5)}
+.btn.green{background:#2e7d32}
+.btn.green:hover{background:#388e3c;box-shadow:0 0 18px rgba(56,142,60,.5)}
+.env{font-size:5em;margin:10px 0;animation:float 2.4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.sealed{color:#ffd54f;font-size:1.15em;line-height:1.55}
+.revealed{background:linear-gradient(170deg,#1b5e20,#0e3d14);border:2px solid #81c784;border-radius:18px;padding:26px 20px;animation:pop .4s ease}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.revealed .wish-text{font-size:1.35em;line-height:1.55;color:#fff;font-style:italic}
+.revealed .from{margin-top:14px;color:#a5d6a7;font-size:1.05em}
+.small{color:#888;font-size:.9em;margin-top:16px;line-height:1.5}
+.linkish{color:#9db2e0;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:.95em;margin-top:14px}
+.footer{color:#666;margin-top:36px;font-size:.9em}
+.footer a{color:#9db2e0}
+</style>
+</head>
+<body>
+<nav class="topnav"><a href="/">🏠 Главная</a><a href="/countdown.html">⏳ Отсчёты</a><a href="/advent.html">🎁 Календарь</a><a href="/wish.html" class="active">🎅 Желание</a><a href="/chat.html">💬 ErikTalk</a><a href="https://eriksocial.alwaysdata.net">🌐 E.Y.L</a></nav>
+<canvas class="snow" id="snow"></canvas>
+<div class="container">
+  <h1>🎅 Желание Деду Морозу</h1>
+  <div class="subtitle">Напиши своё желание — Дед Мороз запечатает его в конверт,<br>а 1 января конверт торжественно откроется ✨</div>
+
+  <div class="box" id="formBox">
+    <input type="text" id="wishName" maxlength="40" placeholder="Твоё имя (необязательно)">
+    <textarea id="wishText" maxlength="500" placeholder="Дорогой Дедушка Мороз! Я хочу..."></textarea>
+    <br><button class="btn" onclick="sealWish()">Запечатать и отправить 🎄</button>
+    <div class="small">Желание хранится только в твоём телефоне/браузере — его никто не увидит до 1 января, даже мы.</div>
+  </div>
+
+  <div class="box" id="sealedBox" style="display:none">
+    <div class="env">✉️</div>
+    <div class="sealed">Твоё желание у Деда Мороза! 🎅<br>Конверт откроется <b>1 января</b> — заходи сюда в первый день нового года.</div>
+    <div class="small" id="daysLeft"></div>
+    <button class="linkish" onclick="rewrite()">Написать другое желание</button>
+  </div>
+
+  <div class="box" id="revealBox" style="display:none">
+    <div class="revealed">
+      <div style="font-size:2.6em">🎆</div>
+      <div style="color:#ffd54f;font-size:1.2em;margin-bottom:12px">С Новым годом! Твоё желание из декабря:</div>
+      <div class="wish-text" id="revealedText"></div>
+      <div class="from" id="revealedName"></div>
+      <div style="margin-top:16px;font-size:1.05em">Пусть оно обязательно сбудется! ✨</div>
+    </div>
+    <button class="btn green" onclick="rewrite()">Загадать новое желание</button>
+  </div>
+
+  <div class="footer">От компании <b>E.Y.L</b> 👑 · <a href="https://eriksocial.alwaysdata.net">Наша соцсеть E.Y.L</a></div>
+</div>
+
+<script>
+const KEY = 'eyl_wish_2027';
+function isRevealTime(){
+  return new Date() >= new Date(2027, 0, 1);
+}
+function show(id){
+  for (const b of ['formBox','sealedBox','revealBox']) document.getElementById(b).style.display = (b === id ? '' : 'none');
+}
+function render(){
+  let w = null;
+  try { w = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){}
+  if (!w || !w.text) { show('formBox'); return; }
+  if (isRevealTime()){
+    document.getElementById('revealedText').textContent = '«' + w.text + '»';
+    document.getElementById('revealedName').textContent = w.name ? '— ' + w.name : '';
+    show('revealBox');
+  } else {
+    const now = new Date();
+    const jan1 = new Date(2027, 0, 1);
+    const days = Math.max(0, Math.ceil((jan1 - now) / 86400000));
+    document.getElementById('daysLeft').textContent = days > 0 ? ('До открытия конверта осталось дней: ' + days) : 'Конверт откроется уже сегодня ночью!';
+    show('sealedBox');
+  }
+}
+function sealWish(){
+  const text = document.getElementById('wishText').value.trim();
+  const name = document.getElementById('wishName').value.trim();
+  if (!text) { alert('Сначала напиши желание 🎄'); return; }
+  localStorage.setItem(KEY, JSON.stringify({ text, name, at: Date.now() }));
+  render();
+}
+function rewrite(){
+  localStorage.removeItem(KEY);
+  document.getElementById('wishText').value = '';
+  document.getElementById('wishName').value = '';
+  show('formBox');
+}
+render();
+
+// Снег
+const cv = document.getElementById('snow'), ctx = cv.getContext('2d');
+let W, H, flakes = [];
+function sizeSnow(){ W = cv.width = innerWidth; H = cv.height = innerHeight;
+  flakes = Array.from({length: 90}, () => ({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*2.4+0.6, s: Math.random()*0.9+0.3, o: Math.random()*0.5+0.3 })); }
+sizeSnow(); addEventListener('resize', sizeSnow);
+(function drawSnow(){
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#fff';
+  for (const f of flakes){
+    ctx.globalAlpha = f.o; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    f.y += f.s; f.x += Math.sin(f.y / 40) * 0.3;
+    if (f.y > H) { f.y = -4; f.x = Math.random()*W; }
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawSnow);
+})();
+</script>
+</body>
+</html>
