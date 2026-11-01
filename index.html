@@ -57,6 +57,15 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <body>
 <nav class="topnav"><a href="/">🏠 Главная</a><a href="/countdown.html">⏳ Отсчёты</a><a href="/advent.html">🎁 Календарь</a><a href="/wish.html">🎅 Желание</a><a href="/chat.html">💬 ErikTalk</a><a href="https://eriksocial.alwaysdata.net">🌐 E.Y.L</a></nav>
 <div id="announce" style="display:none;position:relative;z-index:3;max-width:900px;margin:10px auto 0;padding:12px 18px;background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.5);border-radius:12px;text-align:center;font-size:1.05em"></div>
+<canvas id="fwCanvas" style="display:none;position:fixed;inset:0;z-index:30;pointer-events:none"></canvas>
+<div id="nyGreet" style="display:none;position:fixed;inset:0;z-index:40;background:rgba(4,6,20,.55);align-items:center;justify-content:center;padding:18px">
+  <div style="background:linear-gradient(170deg,#1c2450,#12172f);border:2px solid #ffd54f;border-radius:22px;max-width:520px;width:100%;padding:34px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+    <div style="font-size:3em">🎆</div>
+    <div style="font-size:1.7em;color:#ffd54f;font-weight:800;margin:10px 0">С Новым 2027 годом!</div>
+    <p style="font-size:1.1em;line-height:1.55">Друзья! Поздравляю всех с Новым годом! Пусть 2027-й принесёт здоровье, мир и только хорошие новости. Спасибо, что вы с нами в E.Y.L!<br><br>— Erik, президент компании E.Y.L 👑</p>
+    <button onclick="document.getElementById('nyGreet').style.display='none'" style="margin-top:20px;background:#4CAF50;border:none;color:#fff;font-size:1em;padding:12px 30px;border-radius:12px;cursor:pointer">Ура! 🎉</button>
+  </div>
+</div>
 <canvas class="snow" id="snow"></canvas>
 <div class="garland" id="garland"></div>
 <div class="container">
@@ -128,6 +137,36 @@ fetch('https://eriktalk-api.onrender.com/api/announcement').then(r=>r.json()).th
 fetch('https://eriktalk-api.onrender.com/api/clock-color').then(r=>r.json()).then(d=>{
  if(d && d.color){document.documentElement.style.setProperty('--led',d.color)}
 }).catch(e=>{});
+</script>
+<script>
+// 🎆 Новогодний салют и поздравление от Erik (включается 1 января; предпросмотр — ?salut=1 или 5 нажатий на заголовок)
+(function(){
+  const cvs=document.getElementById('fwCanvas'),ctx=cvs.getContext('2d');
+  let W,H,parts=[],rockets=[],running=false,raf=null,lastLaunch=0,startAt=0;
+  function size(){W=cvs.width=innerWidth;H=cvs.height=innerHeight}
+  size();addEventListener('resize',size);
+  const COLORS=['#ff5252','#ffd54f','#69f0ae','#40c4ff','#e040fb','#ff9800','#ffffff'];
+  function launch(){rockets.push({x:Math.random()*W*0.8+W*0.1,y:H,vy:-(Math.random()*3+9.5),target:Math.random()*H*0.35+H*0.1,color:COLORS[Math.floor(Math.random()*COLORS.length)]})}
+  function boom(r){for(let i=0;i<70;i++){const a=Math.random()*Math.PI*2,s=Math.random()*4.6+0.6;parts.push({x:r.x,y:r.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,decay:Math.random()*0.012+0.008,color:r.color})}}
+  function tick(t){ if(!running)return;
+    ctx.clearRect(0,0,W,H);
+    if(t-lastLaunch>750&&rockets.length<5){launch();lastLaunch=t}
+    rockets=rockets.filter(r=>{r.y+=r.vy;r.vy+=0.12;ctx.fillStyle=r.color;ctx.beginPath();ctx.arc(r.x,r.y,3,0,7);ctx.fill();if(r.vy>=-1||r.y<=r.target){boom(r);return false}return true});
+    parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.035;p.vx*=0.99;p.vy*=0.99;p.life-=p.decay;if(p.life<=0)return false;ctx.globalAlpha=Math.max(p.life,0);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();return true});
+    ctx.globalAlpha=1;
+    if(Date.now()-startAt>120000){stopFW();return}
+    raf=requestAnimationFrame(tick);
+  }
+  function startFW(){ if(running)return; running=true; startAt=Date.now(); cvs.style.display='block'; raf=requestAnimationFrame(tick); }
+  function stopFW(){ running=false; if(raf)cancelAnimationFrame(raf); cvs.style.display='none'; ctx.clearRect(0,0,W,H); }
+  function celebrate(){ document.getElementById('nyGreet').style.display='flex'; startFW(); }
+  const n=new Date();
+  const isNY = n.getMonth()===0 && n.getDate()===1;
+  if(isNY){ const h1=document.querySelector('h1'); if(h1) h1.textContent='🎆 С Новым 2027 годом!'; celebrate(); }
+  else if(new URLSearchParams(location.search).get('salut')==='1'){ celebrate(); }
+  let taps=[]; const h1=document.querySelector('h1');
+  if(h1) h1.addEventListener('click',()=>{ const now=Date.now(); taps=taps.filter(t=>now-t<2500); taps.push(now); if(taps.length>=5){ taps=[]; celebrate(); } });
+})();
 </script>
 </body>
 </html>
