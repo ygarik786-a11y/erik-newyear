@@ -81,6 +81,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 .tc-imeniny{font-size:.93em;color:#5c5546;min-height:1.2em;padding:0 2px}
 .tc-sun{font-size:.85em;color:#6b6350;margin-top:3px}
 .tc-moon{font-size:.85em;color:#6b6350}
+.tc-orn{margin-top:4px;color:#a08c5a;font-size:.95em;letter-spacing:6px}
 .tc-leaf.m1{background:linear-gradient(180deg,#dcefff,#aed6ff)}
 .tc-leaf.m1 .tc-band{background:linear-gradient(180deg,#4a90c4,#3570a8)}
 .tc-leaf.m2{background:linear-gradient(180deg,#eadfff,#c9b3f8)}
@@ -164,6 +165,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <div class="tc-sun" id="tcSun"></div>
 <div class="tc-moon" id="tcMoon"></div>
 <div class="tc-year" id="tcYear">2026 год</div>
+<div class="tc-orn">❦ ✻ ❦</div>
 </div>
 </div>
 <div class="tc-hint">📅 Отрывной календарь — нажми на листочек, чтобы оторвать</div>
@@ -279,7 +281,10 @@ function moonInfo(d){
  var syn=29.530588853, known=Date.UTC(2000,0,6,18,14)/864e5;
  var age=(((d.getTime()/864e5)-known)%syn+syn)%syn;
  var ph=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'][Math.floor(age/syn*8+0.5)%8];
- return ph+' '+(Math.floor(age)+1)+'-й лунный день';
+ var nm=age<1.5?'Новолуние':(age<13.5?'Растущая луна':(age<16.5?'Полнолуние':'Убывающая луна'));
+ var Z=[[20,'♒ Водолей'],[19,'♓ Рыбы'],[21,'♈ Овен'],[20,'♉ Телец'],[21,'♊ Близнецы'],[21,'♋ Рак'],[23,'♌ Лев'],[23,'♍ Дева'],[23,'♎ Весы'],[23,'♏ Скорпион'],[22,'♐ Стрелец'],[22,'♑ Козерог']];
+ var m=d.getMonth(), z=d.getDate()>=Z[m][0]?Z[m][1]:Z[(m+11)%12][1];
+ return ph+' '+(Math.floor(age)+1)+'-й лунный день · '+nm+' · '+z;
 }
 var leaf=document.getElementById('tcLeaf');
 var today=new Date(); today.setHours(0,0,0,0);
@@ -297,7 +302,7 @@ function render(){
  document.getElementById('tcDow').textContent=DOWS[cur.getDay()];
  hel.textContent=h||hc; hel.className='tc-holiday'+(hc?' church':'');
  document.getElementById('tcYear').textContent=cur.getFullYear()+' год';
- var st=sunTimes(cur); document.getElementById('tcSun').textContent=st?('🌅 '+st[0]+' · 🌇 '+st[1]+' · день '+st[2]):'';
+ var st=sunTimes(cur); document.getElementById('tcSun').textContent=st?('☀️ Восход '+st[0]+' · Закат '+st[1]+' · Долгота дня '+st[2]):'';
  document.getElementById('tcMoon').textContent=moonInfo(cur);
  document.getElementById('tcToday').style.display=(cur.getTime()!==today.getTime())?'inline-block':'none';
 }
