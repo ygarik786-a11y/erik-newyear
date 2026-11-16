@@ -52,6 +52,27 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 @keyframes blink{0%,100%{opacity:.3}50%{opacity:1;box-shadow:0 0 10px currentColor}}
 .tree-ball{position:absolute;width:14px;height:14px;border-radius:50%;box-shadow:inset -2px -2px 4px rgba(0,0,0,.4)}
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 10px rgba(255,215,0,.5))}50%{filter:drop-shadow(0 0 25px rgba(255,215,0,.9))}}
+
+/* Отрывной календарь */
+.tearcal-wrap{margin-bottom:30px}
+.tearcal{position:relative;width:280px;margin:0 auto;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.tearcal::before{content:'';position:absolute;left:12px;right:12px;top:34px;bottom:-7px;background:#eadfc0;transform:rotate(-1.3deg);z-index:0;border-radius:0 0 4px 4px;box-shadow:0 8px 16px rgba(0,0,0,.35)}
+.tearcal::after{content:'';position:absolute;left:11px;right:11px;top:34px;bottom:-4px;background:#f1e7c8;transform:rotate(1deg);z-index:0;border-radius:0 0 4px 4px}
+.tc-plate{height:26px;background:linear-gradient(180deg,#5c5c5c,#2c2c2c);border-radius:8px 8px 0 0;position:relative;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.tc-ring{position:absolute;top:-10px;width:18px;height:30px;border:4px solid #a8a8a8;border-radius:50%;z-index:4}
+.tc-leaf{position:relative;z-index:2;background:linear-gradient(180deg,#fdf6dd,#f5ead0);color:#26221c;margin:0 6px;padding:24px 14px 18px;text-align:center;box-shadow:0 12px 24px rgba(0,0,0,.45);border-radius:0 0 3px 3px;font-family:Georgia,'Times New Roman',serif}
+.tc-leaf.tearing{animation:tearoff .55s ease-in forwards;transform-origin:top center}
+@keyframes tearoff{25%{transform:rotate(-2.5deg) translateY(5px)}100%{transform:rotate(8deg) translateY(130px);opacity:0}}
+.tc-month{font-size:1.3em;letter-spacing:6px;font-weight:bold;color:#3a3428;text-transform:uppercase}
+.tc-num{font-size:6em;line-height:1.02;font-weight:bold;color:#26221c;font-variant-numeric:tabular-nums}
+.tc-num.red{color:#cf2418}
+.tc-dow{font-size:1.1em;letter-spacing:4px;text-transform:uppercase;color:#4c4636}
+.tc-line{height:2px;background:#8a7f5f;margin:13px 34px 10px;opacity:.55}
+.tc-holiday{font-size:1.02em;color:#b3202a;font-style:italic;min-height:1.25em;padding:0 4px}
+.tc-year{margin-top:5px;color:#8a8069;font-size:.85em;letter-spacing:3px}
+.tc-hint{color:#999;margin-top:16px;font-size:.92em}
+.tc-today{margin-top:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:.95em}
+.tc-today:hover{background:rgba(255,255,255,.2)}
 </style>
 </head>
 <body>
@@ -95,6 +116,21 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <div class="time-box"><div class="time-num" id="hours">0</div><div class="time-label">часов</div></div>
 <div class="time-box"><div class="time-num" id="minutes">0</div><div class="time-label">минут</div></div>
 <div class="time-box"><div class="time-num" id="seconds">0</div><div class="time-label">секунд</div></div>
+</div>
+<div class="tearcal-wrap">
+<div class="tearcal" id="tearcal" title="Нажми, чтобы оторвать листочек">
+<div class="tc-plate"><span class="tc-ring" style="left:52px"></span><span class="tc-ring" style="right:52px"></span></div>
+<div class="tc-leaf" id="tcLeaf">
+<div class="tc-month" id="tcMonth">НОЯБРЬ</div>
+<div class="tc-num" id="tcNum">16</div>
+<div class="tc-dow" id="tcDow">ПОНЕДЕЛЬНИК</div>
+<div class="tc-line"></div>
+<div class="tc-holiday" id="tcHoliday"></div>
+<div class="tc-year" id="tcYear">2026 год</div>
+</div>
+</div>
+<div class="tc-hint">📅 Отрывной календарь — нажми на листочек, чтобы оторвать</div>
+<button class="tc-today" id="tcToday" style="display:none">↩ Вернуться к сегодняшнему дню</button>
 </div>
 <div class="radio">
 <h2>📻 Новогоднее радио</h2>
@@ -169,6 +205,38 @@ fetch('https://eriktalk-api.onrender.com/api/clock-color').then(r=>r.json()).the
   // Если страница уже открыта в новогоднюю ночь — салют сам включится в 0:00
   let fired=isNY;
   setInterval(()=>{ const d=new Date(); if(!fired && d.getMonth()===0 && d.getDate()===1){ fired=true; const h=document.querySelector('h1'); if(h) h.textContent='🎆 С Новым 2027 годом!'; celebrate(); } }, 10000);
+})();
+</script>
+<script>
+// Отрывной календарь
+(function(){
+var MONTHS=['ЯНВАРЬ','ФЕВРАЛЬ','МАРТ','АПРЕЛЬ','МАЙ','ИЮНЬ','ИЮЛЬ','АВГУСТ','СЕНТЯБРЬ','ОКТЯБРЬ','НОЯБРЬ','ДЕКАБРЬ'];
+var DOWS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
+var FIXED={'01-01':'🎄 Новый год','01-07':'⭐ Рождество Христово','01-19':'💧 Крещение Господне','01-22':'🇺🇦 День Соборности Украины','02-14':'💘 День святого Валентина','03-08':'🌷 Международный женский день','05-01':'🌿 День труда','05-08':'🎖️ День памяти и победы','06-28':'🇺🇦 День Конституции Украины','08-24':'🇺🇦 День Независимости Украины','10-01':'🛡️ День защитников Украины','12-06':'🎅 День святого Николая','12-25':'🎄 Рождество Христово','12-31':'🎉 Канун Нового года'};
+var MOVING={'2026-04-12':'🐣 Пасха — Светлое Христово Воскресение','2026-05-31':'🌿 Троица','2027-05-02':'🐣 Пасха — Светлое Христово Воскресение','2027-06-20':'🌿 Троица','2028-04-16':'🐣 Пасха — Светлое Христово Воскресение','2028-06-04':'🌿 Троица','2029-04-08':'🐣 Пасха — Светлое Христово Воскресение','2029-05-27':'🌿 Троица','2030-04-28':'🐣 Пасха — Светлое Христово Воскресение','2030-06-16':'🌿 Троица'};
+function k2(d){return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function hol(d){return MOVING[d.getFullYear()+'-'+k2(d)]||FIXED[k2(d)]||''}
+var leaf=document.getElementById('tcLeaf');
+var today=new Date(); today.setHours(0,0,0,0);
+var cur=new Date(today);
+function render(){
+ document.getElementById('tcMonth').textContent=MONTHS[cur.getMonth()];
+ var n=document.getElementById('tcNum'); n.textContent=cur.getDate();
+ var h=hol(cur);
+ n.className='tc-num'+((h||cur.getDay()===0)?' red':'');
+ document.getElementById('tcDow').textContent=DOWS[cur.getDay()];
+ document.getElementById('tcHoliday').textContent=h;
+ document.getElementById('tcYear').textContent=cur.getFullYear()+' год';
+ document.getElementById('tcToday').style.display=(cur.getTime()!==today.getTime())?'inline-block':'none';
+}
+var busy=false;
+document.getElementById('tearcal').addEventListener('click',function(){
+ if(busy)return; busy=true;
+ leaf.classList.remove('tearing'); void leaf.offsetWidth; leaf.classList.add('tearing');
+ setTimeout(function(){ cur=new Date(cur.getTime()+864e5); leaf.classList.remove('tearing'); render(); busy=false; },560);
+});
+document.getElementById('tcToday').addEventListener('click',function(){ cur=new Date(today); render(); });
+render();
 })();
 </script>
 </body>
