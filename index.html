@@ -334,6 +334,7 @@ document.getElementById('tearcal').addEventListener('click',function(){
  setTimeout(function(){ cur=new Date(cur.getTime()+864e5); leaf.classList.remove('tearing'); render(); busy=false; },560);
 });
 document.getElementById('tcToday').addEventListener('click',function(){ cur=new Date(today); render(); });
+var _tcD=new Date();_tcD.setHours(0,0,0,0);setInterval(function(){var t=new Date();t.setHours(0,0,0,0);if(t.getTime()!==_tcD.getTime()){_tcD=t;today=new Date(t);cur=new Date(t);render();}},20000);
 render();
 })();
 </script>
