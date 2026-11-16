@@ -272,7 +272,7 @@ function sunTimes(d){
  }
  var r=calc(true), st=calc(false); if(r===null||st===null)return null;
  var off=(new Date(d.toLocaleString('en-US',{timeZone:'Europe/Kiev'}))-new Date(d.toLocaleString('en-US',{timeZone:'UTC'})))/36e5;
- var rr=r+off, ss=st+off, len=Math.round((ss-rr)*60);
+ var rr=((r+off)%24+24)%24, ss=((st+off)%24+24)%24, len=Math.round((ss-rr)*60);
  return [fmtT(rr),fmtT(ss),Math.floor(len/60)+' ч '+String(len%60).padStart(2,'0')+' мин'];
 }
 function moonInfo(d){
