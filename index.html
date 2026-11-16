@@ -316,10 +316,11 @@ function render(){
  document.getElementById('tcMonth').textContent=MONTHS[cur.getMonth()];
  document.getElementById('tcImeniny').textContent='Именины: '+(IMENINY[k2(cur)]||'');
  var n=document.getElementById('tcNum'); n.textContent=cur.getDate();
- var h=holBig(cur), hc=h?'':holChurch(cur), hel=document.getElementById('tcHoliday');
+ var h=holBig(cur), hc=holChurch(cur), hel=document.getElementById('tcHoliday');
+ if(h&&hc){var _norm=function(x){return x.replace(/^[^А-Яа-яA-Za-z]+/,'').toLowerCase();}; if(_norm(h)===_norm(hc))hc='';}
  n.className='tc-num'+((h||cur.getDay()===0)?' red':'');
  document.getElementById('tcDow').textContent=DOWS[cur.getDay()];
- hel.textContent=h||hc; hel.className='tc-holiday'+(hc?' church':'');
+ hel.textContent=h?(hc?h+' · '+hc:h):hc; hel.className='tc-holiday'+(h?'':' church');
  document.getElementById('tcYear').textContent=cur.getFullYear()+' год';
  var st=sunTimes(cur); document.getElementById('tcSun').textContent=st?('☀️ Восход '+st[0]+' · Закат '+st[1]+' · Долгота дня '+st[2]):'';
  document.getElementById('tcMoon').textContent=moonInfo(cur);
