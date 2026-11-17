@@ -26,6 +26,28 @@ h1{font-size:2.5em;margin-bottom:10px;text-shadow:0 0 20px rgba(255,215,0,.5)}
 .clock-card{background:#1a1a1a;border-radius:16px;padding:25px 30px;border:3px solid #333;box-shadow:inset 0 0 20px rgba(0,0,0,.8)}
 .clock-time{font-size:2.8em;font-family:'Courier New',monospace;font-weight:bold;color:var(--led,#aaff00);text-shadow:0 0 8px var(--led,#aaff00),0 0 20px var(--led,#aaff00);font-variant-numeric:tabular-nums;letter-spacing:4px;background:#0a0f0a;padding:10px 15px;border-radius:8px}
 .clock-label{color:#888;margin-top:8px;font-size:.85em}
+/* Часы E.Y.L — как SKMEI, но с ёлочкой вместо человечка */
+.eyl-watch{width:320px;max-width:92vw;margin:0 auto 40px;text-align:center}
+.eyl-strap{height:34px;margin:0 auto;width:150px;background:repeating-linear-gradient(180deg,#d9dee3 0 7px,#aeb6bd 7px 9px,#f2f5f7 9px 15px,#9aa2aa 15px 17px);box-shadow:inset 0 0 6px rgba(0,0,0,.35)}
+.eyl-strap-top{border-radius:8px 8px 2px 2px}
+.eyl-strap-bottom{border-radius:2px 2px 8px 8px}
+.eyl-case{background:linear-gradient(180deg,#222,#000);border:3px solid #555;border-radius:26px;padding:12px 12px 10px;box-shadow:0 10px 30px rgba(0,0,0,.7),inset 0 0 0 2px #111}
+.eyl-brand{color:#cfd6dd;font-weight:800;letter-spacing:6px;font-size:1.05em;text-shadow:0 1px 0 #000;margin:2px 0 8px}
+.eyl-screen{background:linear-gradient(180deg,#a9c6bd,#87aca1);border-radius:12px;padding:10px 12px 12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.35);color:#062a33}
+.eyl-top-row{display:flex;justify-content:space-between;font-family:'Courier New',monospace;font-weight:bold;font-size:.85em;color:#0b4a5c}
+.eyl-time{font-family:'Courier New',monospace;font-weight:bold;color:#00c8f0;text-shadow:0 0 8px rgba(0,200,240,.8);font-variant-numeric:tabular-nums;line-height:1;margin:4px 0 2px}
+.eyl-hm{font-size:3.4em;letter-spacing:2px}
+.eyl-sec{font-size:1.6em;margin-left:6px}
+.eyl-tree{position:relative;font-size:3.2em;line-height:1.1;margin:2px 0}
+.eyl-gl{position:absolute;width:9px;height:9px;border-radius:50%;animation:blink 1.1s ease-in-out infinite}
+.eyl-gl.g1{top:2px;left:46%;background:#ff2222;color:#ff2222}
+.eyl-gl.g2{top:34%;left:36%;background:#22ff66;color:#22ff66;animation-delay:.3s}
+.eyl-gl.g3{top:34%;right:36%;background:#3388ff;color:#3388ff;animation-delay:.6s}
+.eyl-gl.g4{top:62%;left:42%;background:#ffdd00;color:#ffdd00;animation-delay:.9s}
+.eyl-gl.g5{top:62%;right:42%;background:#ff44dd;color:#ff44dd;animation-delay:.5s}
+.eyl-date{font-weight:bold;font-size:1.25em;color:#2bff3c;text-shadow:0 0 8px #2bff3c,0 0 18px rgba(43,255,60,.7);margin-top:4px}
+.eyl-year{font-family:'Courier New',monospace;font-weight:bold;font-size:1.1em;color:#0b4a5c;margin-top:2px}
+.eyl-bottom{color:#cfd6dd;font-weight:700;letter-spacing:2px;font-size:.95em;margin-top:8px;text-shadow:0 1px 0 #000}
 .radio{background:rgba(255,255,255,.05);border-radius:20px;padding:30px;margin-bottom:30px;border:1px solid rgba(255,255,255,.1)}
 .radio h2{margin-bottom:20px;font-size:1.5em}
 .stations{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
@@ -130,6 +152,21 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 <div class="clock-card"><div class="clock-time" id="clock-local">00:00:00</div><div class="clock-label">Время</div></div>
 <div class="clock-card"><div class="clock-time" id="date-today" style="font-size:1.8em">—</div><div class="clock-label" id="holiday-today">📅</div></div>
 </div>
+<div class="eyl-watch">
+<div class="eyl-strap eyl-strap-top"></div>
+<div class="eyl-case">
+<div class="eyl-brand">E.Y.L</div>
+<div class="eyl-screen">
+<div class="eyl-top-row"><span>🔔 SIG&nbsp;ALM</span><span>⚡ 100%</span></div>
+<div class="eyl-time"><span class="eyl-hm" id="eyl-hm">--:--</span><span class="eyl-sec" id="eyl-sec">--</span></div>
+<div class="eyl-tree">🎄<span class="eyl-gl g1"></span><span class="eyl-gl g2"></span><span class="eyl-gl g3"></span><span class="eyl-gl g4"></span><span class="eyl-gl g5"></span></div>
+<div class="eyl-date" id="eyl-date">—</div>
+<div class="eyl-year" id="eyl-year">2026</div>
+</div>
+<div class="eyl-bottom">С любовью 💛</div>
+</div>
+<div class="eyl-strap eyl-strap-bottom"></div>
+</div>
 <div class="tree" style="width:300px;height:420px">
 <div class="tree-star">⭐</div>
 <div class="tree-layer tree-l1" style="top:40px;border-left-width:75px;border-right-width:75px;border-bottom-width:105px"></div>
@@ -206,6 +243,8 @@ setInterval(ck,1000);ck();
 // Дата и праздники
 function updDate(){const n=new Date();const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('date-today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];const h={'01-01':'🎄 Новый год','01-07':'⭐ Рождество','02-14':'💘 День влюблённых','03-08':'🌷 8 Марта','05-01':'🌿 День труда','05-09':'🎖️ День Победы','12-25':'🎄 Католическое Рождество','12-31':'🎉 Канун Нового года','01-14':'🕯️ Свт. Василия Великого · Старый Новый год','02-15':'🕯️ Сретение Господне','03-25':'🕊️ Благовещение Пресвятой Богородицы','06-24':'🌿 Рождество Иоанна Предтечи','06-29':'🕯️ Святых апостолов Петра и Павла','08-19':'🍎 Преображение Господне · Яблочный Спас','08-28':'🕊️ Успение Пресвятой Богородицы','09-21':'🕊️ Рождество Пресвятой Богородицы','09-27':'✝️ Воздвижение Креста Господня','11-21':'🕊️ Введение во храм Пресвятой Богородицы','04-12':'🚀 День космонавтики'};const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');document.getElementById('holiday-today').textContent=h[key]||n.getFullYear()}
 updDate();setInterval(updDate,1000);
+function eylWatch(){const n=new Date();const p=v=>String(v).padStart(2,'0');document.getElementById('eyl-hm').textContent=p(n.getHours())+':'+p(n.getMinutes());document.getElementById('eyl-sec').textContent=p(n.getSeconds());const days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];document.getElementById('eyl-date').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()];document.getElementById('eyl-year').textContent=n.getFullYear()}
+eylWatch();setInterval(eylWatch,1000);
 // Радио
 const p=document.getElementById('player');
 p.preload='none';
