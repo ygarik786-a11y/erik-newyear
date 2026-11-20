@@ -370,9 +370,13 @@ render();
 })();
 </script>
 <script>
-// 🎄 Кодовая ёлка для новогоднего сайта — чистый canvas, без картинок.
-// Статика (ветки, ствол, подарки) рисуется один раз в offscreen,
-// каждый кадр — только гирлянда, игрушки, звезда и снег. Лёгкая.
+// 🎄 Кодовая ёлка v2 для новогоднего сайта — чистый canvas, без картинок.
+// Игрушки стоят РОВНО по симметрии (заранее заданные позиции, не случайные),
+// гирлянда — две спирали, огоньков в 4 раза больше и ярче, звезда — как у Erik:
+// двойная золотая, с красным бантом, шишкой и зелёной мишурой. Плюс часы-игрушка
+// (без пяти двенадцать, как на его фото), Дед Мороз, Снегурочка, снеговик,
+// колокольчик и конфета. Статика — в offscreen, каждый кадр — гирлянда, игрушки,
+// звезда и снег. Лёгкая.
 (function(){
   var cv=document.getElementById('codeTree');
   if(!cv||!cv.getContext)return;
@@ -422,7 +426,7 @@ render();
     }
   }
   o.globalAlpha=1;
-  // подарки под ёлкой
+  // подарки под ёлкой — 5 штук
   function gift(x,y,w,h,c){
     o.fillStyle=c;o.fillRect(x,y,w,h);
     o.fillStyle='rgba(255,255,255,0.25)';o.fillRect(x,y,w,10);
@@ -432,19 +436,28 @@ render();
     o.fillStyle='rgba(0,0,0,0.2)';o.fillRect(x,y+h-8,w,8);
   }
   gift(82,758,74,58,'#e53935');
+  gift(168,786,58,40,'#2e9e4f');
+  gift(228,800,40,30,'#7e57c2');
+  gift(350,782,58,44,'#ffb300');
   gift(448,754,80,62,'#2962ff');
-  gift(352,782,58,44,'#ffb300');
-  // --- игрушки и гирлянда: позиции заранее ---
+  // --- игрушки: РОВНО, симметрично, заранее заданные места ---
   var ballColors=['#ff2d2d','#2f7bff','#ffd700','#ff4fd8','#ff7a00','#22e6ff','#c44dff','#ff5c5c'];
-  var balls=[];
-  for(var b=0;b<17;b++){
-    var by=185+rnd()*490,bhw=halfW(by)*0.78;
-    balls.push({x:CX+(rnd()*2-1)*bhw,y:by,r:13+rnd()*5,c:pick(ballColors),ph:rnd()*6.28});
-  }
-  var gar=[];
-  for(var t=0;t<=1.0001;t+=0.012){
+  var ballPos=[
+    [245,215,15],[355,215,15],
+    [195,300,16],[300,300,14],[405,300,16],
+    [160,390,15],[252,390,15],[348,390,15],[440,390,15],
+    [160,645,15],[255,645,15],[345,645,15],[440,645,15]
+  ];
+  var balls=ballPos.map(function(p,i){
+    return {x:p[0],y:p[1],r:p[2],c:ballColors[i%ballColors.length],ph:i*0.9};
+  });
+  // --- гирлянда: ДВЕ спирали, огоньков много и ярко ---
+  var gar1=[],gar2=[];
+  for(var t=0;t<=1.0001;t+=0.008){
     var gy=150+t*540;
-    gar.push({x:CX+Math.sin(t*Math.PI*5)*halfW(gy)*0.82,y:gy,ph:t*22});
+    gar1.push({x:CX+Math.sin(t*Math.PI*5)*halfW(gy)*0.82,y:gy,ph:t*22});
+    var gy2=170+t*520;
+    gar2.push({x:CX+Math.sin(t*Math.PI*5+Math.PI)*halfW(gy2)*0.82,y:gy2,ph:t*22+3});
   }
   var garColors=['#ff3b30','#ffd60a','#34c759','#0a84ff','#ff9f0a','#bf5af2','#64d2ff'];
   // снег на ёлке
@@ -460,25 +473,206 @@ render();
     }
     c.closePath();
   }
+  // --- фигурные игрушки кодом ---
+  function drawClock(x,y,r){
+    ctx.strokeStyle='#c9a227';ctx.lineWidth=2;ctx.beginPath();
+    ctx.moveTo(x,y-r);ctx.lineTo(x,y-r-10);ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y-r-12,3,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#d4af37';ctx.beginPath();ctx.roundRect(x-8,y-r-7,16,11,3);ctx.fill();
+    var g=ctx.createRadialGradient(x-6,y-8,2,x,y,r+2);
+    g.addColorStop(0,'#fff7ae');g.addColorStop(0.5,'#d4af37');g.addColorStop(1,'#8a6d1f');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    var fg=ctx.createRadialGradient(x-5,y-6,2,x,y,r*0.82);
+    fg.addColorStop(0,'#8be0a8');fg.addColorStop(0.55,'#2e9e4f');fg.addColorStop(1,'#1b6b34');
+    ctx.fillStyle=fg;ctx.beginPath();ctx.arc(x,y,r*0.82,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.font='bold '+Math.round(r*0.42)+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    for(var n=1;n<=12;n++){
+      var a=(n/12)*Math.PI*2-Math.PI/2;
+      ctx.fillText(String(n),x+Math.cos(a)*r*0.6,y+Math.sin(a)*r*0.6);
+    }
+    // стрелки: без пяти двенадцать — как на фото Erik
+    function hand(ang,len,w){
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=w;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(ang)*len,y+Math.sin(ang)*len);ctx.stroke();
+    }
+    hand(((11+57/60)/12)*Math.PI*2-Math.PI/2,r*0.45,3.5);
+    hand((57/60)*Math.PI*2-Math.PI/2,r*0.68,2.5);
+    ctx.fillStyle='#ffd700';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  }
+  function drawSanta(x,y,r){
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(x,y+r*0.35,r*0.72,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffdcb8';ctx.beginPath();ctx.arc(x,y-r*0.15,r*0.68,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e53935';ctx.beginPath();
+    ctx.moveTo(x-r*0.68,y-r*0.3);
+    ctx.quadraticCurveTo(x,y-r*1.25,x+r*0.55,y-r*0.85);
+    ctx.quadraticCurveTo(x+r*0.15,y-r*0.55,x+r*0.68,y-r*0.3);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.fillRect(x-r*0.72,y-r*0.42,r*1.44,r*0.22);
+    ctx.beginPath();ctx.arc(x+r*0.55,y-r*0.85,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#222';ctx.beginPath();
+    ctx.arc(x-r*0.25,y-r*0.15,2.4,0,Math.PI*2);ctx.arc(x+r*0.25,y-r*0.15,2.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff9d9d';ctx.beginPath();ctx.arc(x,y-r*0.02,3.4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#c62828';ctx.lineWidth=2;ctx.beginPath();
+    ctx.arc(x,y+r*0.12,7,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
+  }
+  function drawMaiden(x,y,r){
+    ctx.strokeStyle='#ffd94a';ctx.lineWidth=6;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x-r*0.72,y-r*0.1);ctx.lineTo(x-r*0.85,y+r*0.85);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+r*0.72,y-r*0.1);ctx.lineTo(x+r*0.85,y+r*0.85);ctx.stroke();
+    ctx.fillStyle='#e53935';ctx.beginPath();
+    ctx.arc(x-r*0.85,y+r*0.85,4,0,Math.PI*2);ctx.arc(x+r*0.85,y+r*0.85,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffdcb8';ctx.beginPath();ctx.arc(x,y,r*0.68,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#7ec8ff';ctx.beginPath();
+    ctx.moveTo(x-r*0.72,y-r*0.25);
+    ctx.quadraticCurveTo(x-r*0.5,y-r*1.2,x,y-r*1.25);
+    ctx.quadraticCurveTo(x+r*0.5,y-r*1.2,x+r*0.72,y-r*0.25);
+    ctx.quadraticCurveTo(x,y-r*0.55,x-r*0.72,y-r*0.25);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.beginPath();
+    ctx.arc(x-r*0.35,y-r*0.85,2.5,0,Math.PI*2);ctx.arc(x,y-r*1.05,2.5,0,Math.PI*2);
+    ctx.arc(x+r*0.35,y-r*0.85,2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.fillRect(x-r*0.72,y-r*0.38,r*1.44,r*0.16);
+    ctx.fillStyle='#222';ctx.beginPath();
+    ctx.arc(x-r*0.25,y-r*0.05,2.4,0,Math.PI*2);ctx.arc(x+r*0.25,y-r*0.05,2.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff9d9d';ctx.beginPath();
+    ctx.arc(x-r*0.42,y+r*0.15,3.4,0,Math.PI*2);ctx.arc(x+r*0.42,y+r*0.15,3.4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#c62828';ctx.lineWidth=2;ctx.beginPath();
+    ctx.arc(x,y+r*0.18,6,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
+  }
+  function drawSnowman(x,y,r){
+    ctx.fillStyle='#ffffff';ctx.strokeStyle='#d7d7d7';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x,y+r*0.35,r*0.62,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y-r*0.45,r*0.45,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#222';ctx.fillRect(x-r*0.32,y-r*1.25,r*0.64,r*0.42);
+    ctx.fillRect(x-r*0.45,y-r*0.86,r*0.9,r*0.12);
+    ctx.fillStyle='#e53935';ctx.fillRect(x-r*0.55,y-r*0.06,r*1.1,r*0.22);
+    ctx.fillRect(x+r*0.2,y+r*0.14,r*0.22,r*0.4);
+    ctx.fillStyle='#222';ctx.beginPath();
+    ctx.arc(x-r*0.16,y-r*0.5,2.4,0,Math.PI*2);ctx.arc(x+r*0.16,y-r*0.5,2.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff7a00';ctx.beginPath();
+    ctx.moveTo(x,y-r*0.38);ctx.lineTo(x+r*0.55,y-r*0.3);ctx.lineTo(x,y-r*0.24);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#222';ctx.beginPath();
+    ctx.arc(x,y+r*0.3,2.4,0,Math.PI*2);ctx.arc(x,y+r*0.5,2.4,0,Math.PI*2);ctx.fill();
+  }
+  function drawBell(x,y,r){
+    ctx.fillStyle='#e53935';ctx.beginPath();
+    ctx.moveTo(x,y-r*0.95);ctx.lineTo(x-r*0.4,y-r*0.6);ctx.lineTo(x-r*0.05,y-r*0.68);ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x,y-r*0.95);ctx.lineTo(x+r*0.4,y-r*0.6);ctx.lineTo(x+r*0.05,y-r*0.68);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.arc(x,y-r*0.72,4,0,Math.PI*2);ctx.fill();
+    var g=ctx.createLinearGradient(x-r*0.7,y,x+r*0.7,y);
+    g.addColorStop(0,'#fff7ae');g.addColorStop(0.5,'#ffd700');g.addColorStop(1,'#c9930a');
+    ctx.fillStyle=g;ctx.beginPath();
+    ctx.moveTo(x-r*0.62,y+r*0.55);
+    ctx.quadraticCurveTo(x-r*0.6,y-r*0.6,x,y-r*0.7);
+    ctx.quadraticCurveTo(x+r*0.6,y-r*0.6,x+r*0.62,y+r*0.55);
+    ctx.quadraticCurveTo(x,y+r*0.75,x-r*0.62,y+r*0.55);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle='#b8860b';ctx.fillRect(x-r*0.62,y+r*0.42,r*1.24,r*0.14);
+    ctx.fillStyle='#8a6d1f';ctx.beginPath();ctx.arc(x,y+r*0.72,4.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.85)';ctx.beginPath();
+    ctx.ellipse(x-r*0.28,y-r*0.15,4,9,-0.4,0,Math.PI*2);ctx.fill();
+  }
+  function drawCandy(x,y,r){
+    ctx.fillStyle='#ff5c8a';ctx.beginPath();
+    ctx.moveTo(x-r*0.95,y);ctx.lineTo(x-r*0.5,y-r*0.35);ctx.lineTo(x-r*0.5,y+r*0.35);ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x+r*0.95,y);ctx.lineTo(x+r*0.5,y-r*0.35);ctx.lineTo(x+r*0.5,y+r*0.35);ctx.closePath();ctx.fill();
+    ctx.save();
+    ctx.beginPath();ctx.arc(x,y,r*0.58,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle='#ffffff';ctx.fillRect(x-r*0.58,y-r*0.58,r*1.16,r*1.16);
+    ctx.fillStyle='#e53935';
+    for(var i=-2;i<=2;i+=2)ctx.fillRect(x+i*r*0.29-r*0.14,y-r*0.58,r*0.29,r*1.16);
+    ctx.restore();
+    ctx.strokeStyle='#c9a227';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r*0.58,0,Math.PI*2);ctx.stroke();
+  }
+  var specials=[
+    {f:drawSanta,x:150,y:480,r:28},
+    {f:drawClock,x:300,y:480,r:30},
+    {f:drawMaiden,x:450,y:480,r:28},
+    {f:drawBell,x:165,y:565,r:26},
+    {f:drawSnowman,x:300,y:565,r:30},
+    {f:drawCandy,x:435,y:565,r:26}
+  ];
+  // --- звезда Erik: двойная золотая, бант, шишка, мишура ---
+  function drawErikStar(t){
+    var pulse=1+0.05*Math.sin(t*0.002);
+    ctx.save();
+    ctx.translate(CX,62);ctx.scale(pulse,pulse);
+    ctx.shadowColor='#ffd700';ctx.shadowBlur=36+12*Math.sin(t*0.002);
+    var sg=ctx.createLinearGradient(0,-44,0,44);
+    sg.addColorStop(0,'#fff7ae');sg.addColorStop(0.5,'#ffd700');sg.addColorStop(1,'#ff9d00');
+    ctx.fillStyle='rgba(255,215,0,0.25)';
+    drawStar(ctx,0,0,46,19,-Math.PI/2);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle=sg;ctx.lineWidth=8;ctx.lineJoin='round';
+    drawStar(ctx,0,0,44,18,-Math.PI/2);ctx.stroke();
+    ctx.lineWidth=5;
+    drawStar(ctx,0,0,30,12,-Math.PI/2);ctx.stroke();
+    ctx.fillStyle='#ffffff';
+    [[0,-44],[42,-14],[26,36],[-26,36],[-42,-14]].forEach(function(p){
+      ctx.beginPath();ctx.arc(p[0],p[1],2.2,0,Math.PI*2);ctx.fill();
+    });
+    // зелёная мишура в середине
+    ctx.lineWidth=2.5;ctx.lineCap='round';
+    var tin=['#1a9e4b','#c0c0c0','#0d7a3a','#e8e8e8'];
+    for(var i=0;i<8;i++){
+      var a=i*Math.PI/4+0.3;
+      ctx.strokeStyle=tin[i%tin.length];
+      ctx.beginPath();ctx.moveTo(0,0);
+      ctx.lineTo(Math.cos(a)*13,Math.sin(a)*13);ctx.stroke();
+    }
+    // красный бант
+    ctx.fillStyle='#e53935';ctx.beginPath();
+    ctx.moveTo(0,-2);ctx.lineTo(-17,-11);ctx.lineTo(-17,7);ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0,-2);ctx.lineTo(17,-11);ctx.lineTo(17,7);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#b71c1c';ctx.beginPath();ctx.arc(0,0,4.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#e53935';ctx.lineWidth=3;ctx.beginPath();
+    ctx.moveTo(-4,4);ctx.lineTo(-9,16);ctx.moveTo(4,4);ctx.lineTo(9,16);ctx.stroke();
+    // шишка
+    ctx.fillStyle='#6d4c2f';ctx.beginPath();ctx.ellipse(0,13,6,8,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#8d6e4a';ctx.beginPath();
+    ctx.arc(-2,10,1.6,0,Math.PI*2);ctx.arc(2,12,1.6,0,Math.PI*2);ctx.arc(0,16,1.6,0,Math.PI*2);ctx.fill();
+    // золотой конус-держатель внизу
+    var cg=ctx.createLinearGradient(-12,0,12,0);
+    cg.addColorStop(0,'#fff7ae');cg.addColorStop(0.5,'#ffd700');cg.addColorStop(1,'#c9930a');
+    ctx.fillStyle=cg;ctx.beginPath();
+    ctx.moveTo(-11,34);ctx.lineTo(11,34);ctx.lineTo(7,60);ctx.lineTo(-7,60);ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
   function draw(t){
     ctx.clearRect(0,0,W,H);
     ctx.drawImage(off,0,0);
-    // гирлянда-нить
-    ctx.strokeStyle='rgba(255,215,0,0.55)';ctx.lineWidth=3;ctx.beginPath();
-    gar.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y)});
-    ctx.stroke();
-    // огоньки гирлянды
-    for(var i=0;i<gar.length;i+=5){
-      var p=gar[i];
-      var a=0.55+0.45*Math.sin(t*0.003+p.ph);
-      ctx.globalAlpha=a;
-      ctx.fillStyle=garColors[(i/5)%garColors.length|0];
-      ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=14;
-      ctx.beginPath();ctx.arc(p.x,p.y,6.5,0,Math.PI*2);ctx.fill();
+    // нити гирлянд
+    ctx.save();
+    ctx.strokeStyle='rgba(255,215,0,0.7)';ctx.lineWidth=3;
+    ctx.shadowColor='#ffd700';ctx.shadowBlur=8;
+    [gar1,gar2].forEach(function(gar){
+      ctx.beginPath();
+      gar.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y)});
+      ctx.stroke();
+    });
+    ctx.restore();
+    // огоньки — ярко, с ореолом, не гаснут до конца
+    function bulbs(gar,step){
+      for(var i=0;i<gar.length;i+=step){
+        var p=gar[i];
+        var a=0.8+0.2*Math.sin(t*0.003+p.ph);
+        var col=garColors[(i/step|0)%garColors.length];
+        ctx.globalAlpha=a*0.22;ctx.fillStyle=col;
+        ctx.beginPath();ctx.arc(p.x,p.y,14,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=a;
+        ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=24;
+        ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fill();
+      }
     }
+    bulbs(gar1,3);bulbs(gar2,4);
     ctx.shadowBlur=0;ctx.globalAlpha=1;
-    // игрушки
-    balls.forEach(function(bl,idx){
+    // шарики — ровно по местам
+    balls.forEach(function(bl){
       var tw=0.88+0.12*Math.sin(t*0.002+bl.ph);
       ctx.globalAlpha=tw;
       var g=ctx.createRadialGradient(bl.x-4,bl.y-5,2,bl.x,bl.y,bl.r+2);
@@ -489,17 +683,10 @@ render();
       ctx.beginPath();ctx.arc(bl.x-4,bl.y-5,3,0,Math.PI*2);ctx.fill();
     });
     ctx.globalAlpha=1;
-    // звезда
-    var pulse=1+0.06*Math.sin(t*0.002);
-    ctx.save();
-    ctx.translate(CX,64);ctx.scale(pulse,pulse);
-    ctx.shadowColor='#ffd700';ctx.shadowBlur=26+10*Math.sin(t*0.002);
-    var sg=ctx.createLinearGradient(0,-36,0,36);
-    sg.addColorStop(0,'#fff7ae');sg.addColorStop(0.5,'#ffd700');sg.addColorStop(1,'#ff9d00');
-    ctx.fillStyle=sg;
-    drawStar(ctx,0,0,36,15,-Math.PI/2);ctx.fill();
-    ctx.restore();
-    ctx.shadowBlur=0;
+    // фигурные игрушки
+    specials.forEach(function(s){s.f(s.x,s.y,s.r)});
+    // звезда Erik
+    drawErikStar(t);
     // снег
     ctx.fillStyle='rgba(255,255,255,0.9)';
     flakes.forEach(function(fl){
@@ -533,7 +720,6 @@ render();
     (function loop(t){draw(t||0);requestAnimationFrame(loop)})(0);
   }
 })();
-
 </script>
 </body>
 </html>
