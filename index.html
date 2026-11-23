@@ -137,6 +137,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 .tc-leaf.m12 .tc-band{background:linear-gradient(180deg,#2f6fd0,#1f4fa0)}
 
 .tc-holiday.church{color:#8a6d1f}
+.ny-visits{display:inline-block;margin:10px auto 0;padding:7px 16px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,213,79,.5);color:#ffe9a8;font-weight:700;font-size:15px}
 </style>
 </head>
 <body>
@@ -175,6 +176,7 @@ audio{width:100%;max-width:400px;margin-top:15px;border-radius:10px}
 </div>
 <h1>До Нового Года осталось:</h1>
 <p class="subtitle">Erik's New Year Countdown</p>
+<div style="text-align:center"><span class="ny-visits" id="nyVisits">👀 Заходов: …</span></div>
 <div class="countdown">
 <div class="time-box"><div class="time-num" id="days">0</div><div class="time-label">дней</div></div>
 <div class="time-box"><div class="time-num" id="hours">0</div><div class="time-label">часов</div></div>
@@ -758,6 +760,25 @@ render();
       box.appendChild(d);
     }
   });
+})();
+</script>
+<script>
+// Счётчик заходов на новогодний сайт (Abacus, бесплатный) — как на сайте игр
+(function(){
+  var API="https://abacus.jasoncameron.dev/",NS="erik-newyear";
+  function hit(k){return fetch(API+"hit/"+NS+"/"+k).then(function(r){return r.json();});}
+  function get(k){return fetch(API+"get/"+NS+"/"+k).then(function(r){return r.json();});}
+  var chip=document.getElementById("nyVisits");
+  var vP=sessionStorage.getItem("nyCounted")?get("visits"):hit("visits");
+  sessionStorage.setItem("nyCounted","1");
+  var pP;
+  if(localStorage.getItem("nyPlayer")){pP=get("players");}
+  else{pP=hit("players");localStorage.setItem("nyPlayer","1");}
+  Promise.all([vP,pP]).then(function(res){
+    if(chip&&res[0]&&typeof res[0].value==="number"){
+      chip.textContent="👀 Заходов: "+res[0].value+(res[1]&&typeof res[1].value==="number"?" • 🎄 Гостей: "+res[1].value:"");
+    }
+  }).catch(function(){});
 })();
 </script>
 </body>
