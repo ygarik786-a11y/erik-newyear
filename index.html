@@ -764,19 +764,40 @@ render();
 </script>
 <script>
 // Счётчик заходов на новогодний сайт (Abacus, бесплатный) — как на сайте игр
+// Abacus бывает медленный и падает: запрос с таймаутом 6 сек, до 3 попыток; цифры показываем сразу из памяти телефона, а не ждём ответа
 (function(){
   var API="https://abacus.jasoncameron.dev/",NS="erik-newyear";
-  function hit(k){return fetch(API+"hit/"+NS+"/"+k).then(function(r){return r.json();});}
-  function get(k){return fetch(API+"get/"+NS+"/"+k).then(function(r){return r.json();});}
+  function fetchJSON(url){
+    var c=new AbortController();var t=setTimeout(function(){c.abort();},6000);
+    return fetch(url,{signal:c.signal}).then(function(r){clearTimeout(t);return r.json();})
+      .catch(function(e){clearTimeout(t);throw e;});
+  }
+  function getRetry(k,tries){
+    return fetchJSON(API+"get/"+NS+"/"+k).catch(function(){
+      return tries>1?getRetry(k,tries-1):Promise.reject(new Error("abacus"));
+    });
+  }
+  // hit — один раз, без повтора: повтор мог бы накрутить заход дважды
+  function hitOnce(k){return fetchJSON(API+"hit/"+NS+"/"+k).catch(function(){return getRetry(k,3);});}
   var chip=document.getElementById("nyVisits");
-  var vP=sessionStorage.getItem("nyCounted")?get("visits"):hit("visits");
+  function show(v,p){
+    if(!chip)return;
+    chip.textContent="👀 Заходов: "+v+(typeof p==="number"?" • 🎄 Гостей: "+p:"");
+  }
+  try{
+    var last=JSON.parse(localStorage.getItem("nyLastCounts")||"null");
+    if(last&&typeof last.v==="number")show(last.v,last.p);
+  }catch(e){}
+  var vP=sessionStorage.getItem("nyCounted")?getRetry("visits",3):hitOnce("visits");
   sessionStorage.setItem("nyCounted","1");
   var pP;
-  if(localStorage.getItem("nyPlayer")){pP=get("players");}
-  else{pP=hit("players");localStorage.setItem("nyPlayer","1");}
+  if(localStorage.getItem("nyPlayer")){pP=getRetry("players",3);}
+  else{pP=hitOnce("players");localStorage.setItem("nyPlayer","1");}
   Promise.all([vP,pP]).then(function(res){
-    if(chip&&res[0]&&typeof res[0].value==="number"){
-      chip.textContent="👀 Заходов: "+res[0].value+(res[1]&&typeof res[1].value==="number"?" • 🎄 Гостей: "+res[1].value:"");
+    if(res[0]&&typeof res[0].value==="number"){
+      var pv=(res[1]&&typeof res[1].value==="number")?res[1].value:undefined;
+      show(res[0].value,pv);
+      try{localStorage.setItem("nyLastCounts",JSON.stringify({v:res[0].value,p:pv}));}catch(e){}
     }
   }).catch(function(){});
 })();
